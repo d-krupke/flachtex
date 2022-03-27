@@ -3,10 +3,7 @@ import typing
 
 from flachtex.cycle_prevention import CyclePrevention
 from flachtex.filefinder import FileFinder
-from flachtex.fileguesser import FileGuesser
-from flachtex.filereader import FileReader
-from flachtex.flattened_document import FlattenedDocument
-from flachtex.originawarestr import OriginAwareString
+from flachtex.originawarestr import TraceableString
 from flachtex.rules import IncludeRule, SkipRule, Import, Range, BASIC_SKIP_RULES, \
     BASIC_INCLUDE_RULES
 
@@ -60,8 +57,8 @@ def parse(file_path: str,
           file_finder: FileFinder,
           skip_rules: typing.List[SkipRule],
           include_rules: typing.List[IncludeRule]) \
-        -> typing.Tuple[OriginAwareString, typing.Iterable[Import]]:
-    content = OriginAwareString(file_finder.read(file_path), origin=file_path)
+        -> typing.Tuple[TraceableString, typing.Iterable[Import]]:
+    content = TraceableString(file_finder.read(file_path), origin=file_path)
     content = apply_skip_rules(content, skip_rules, context=file_path)
     imports = find_imports(content, include_rules)
     sorted_imports = sort_imports(imports, context=file_path)
@@ -73,7 +70,7 @@ def expand_file(file_path: str,
                 include_rules: typing.List[IncludeRule] = BASIC_INCLUDE_RULES,
                 file_finder: FileFinder = None,
                 cycle_prevention: CyclePrevention = None,
-                cb: typing.Callable[[str, str, str], None] = None) -> OriginAwareString:
+                cb: typing.Callable[[str, str, str], None] = None) -> TraceableString:
     """
     Expands a file recursively by including all imports as well as skipping all parts
     according to the skip rules.

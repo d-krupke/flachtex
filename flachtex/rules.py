@@ -7,7 +7,6 @@ import abc
 import re
 import typing
 
-from flachtex.rule_manager import include_rule, skip_rule
 import os
 
 
