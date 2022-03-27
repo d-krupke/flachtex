@@ -44,4 +44,9 @@ Complex import logic that cannot be parsed by flachtex.
 %%FLACHTEX-SKIP-STOP
 ```
 
+You an install this tool with
+``` 
+pip install flachtex
+```
+
 **This tool is still work in progress.**

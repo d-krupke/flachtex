@@ -7,13 +7,14 @@ def readme():
 
 
 setup(name='flachtex',
-      version='0.1',
+      version='0.1.4',
       description='A traceable LaTeX flattener.',
       long_description=readme(),
+      long_description_content_type="text/markdown",
       classifiers=[
-        'Development Status :: 3 - Alpha',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.7',
+          'Development Status :: 3 - Alpha',
+          'License :: OSI Approved :: MIT License',
+          'Programming Language :: Python :: 3',
       ],
       keywords='LaTeX flatten',
       url='https://github.com/d-krupke/flachtex',
@@ -25,5 +26,6 @@ setup(name='flachtex',
       entry_points={
           'console_scripts': ['flachtex=flachtex.cli:main'],
       },
+      python_requires='>=3.7',
       include_package_data=True,
       zip_safe=False)
