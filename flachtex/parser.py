@@ -3,7 +3,7 @@ import typing
 
 from flachtex.cycle_prevention import CyclePrevention
 from flachtex.filefinder import FileFinder
-from flachtex.originawarestr import TraceableString
+from flachtex.tracrable_string import TraceableString
 from flachtex.rules import IncludeRule, SkipRule, Import, Range, BASIC_SKIP_RULES, \
     BASIC_INCLUDE_RULES
 
@@ -88,6 +88,7 @@ def expand_file(file_path: str,
                                                              file_path)
     content, sorted_imports = parse(file_path, file_finder, skip_rules, include_rules)
     offset = 0
+    cycle_prevention.push(file_path, context=file_path)
     for match in sorted_imports:
         insertion_file = file_finder.find_best_matching_path(match.path, origin=file_path)
         if cb:
@@ -98,4 +99,5 @@ def expand_file(file_path: str,
         content = content[:match.begin + offset] + insertion + content[
                                                                match.end + offset:]
         offset += len(insertion) - len(match)
+    cycle_prevention.pop()
     return content

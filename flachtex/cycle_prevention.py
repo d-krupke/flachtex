@@ -11,9 +11,12 @@ class CycleException(Exception):
 
 class CyclePrevention:
     def __init__(self):
-        self._checked_paths = set()
+        self._checked_paths = []
 
-    def check(self, path, context=None):
+    def push(self, path, context=None):
         if path in self._checked_paths:
             raise CycleException(path, context)
-        self._checked_paths.add(path)
+        self._checked_paths.append(path)
+
+    def pop(self):
+        self._checked_paths.pop()
