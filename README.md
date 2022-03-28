@@ -7,7 +7,7 @@ each character came. Additionally, it has some extra commands that allow to expl
 tell *flachtex* what to do, even in complicated scenarios.
 
 There are many other tools to flatten LaTeX, but I did not find a tool that could handle
-my dissertation (that uses *subimport* has some logic involved) and also was capable
+my dissertation (that uses *subimport* and has some logic involved) and also was capable
 of telling you where each word came from. The second part is important for automated 
 spell, grammar, and code checker: For long documents, you do not want to search where
 this error was made (in general, no auto-fix is possible). *flachtex* solves this problem
@@ -61,7 +61,7 @@ from flachtex.comments import remove_comments
 from flachtex import FileFinder, expand_file
 
 # For this example, we provide the files as dictionary. You can skip the part with the
-# FileFinder if you are working on you file system.
+# FileFinder if you are working on your file system.
 document = {
     "main.tex":
         r"""

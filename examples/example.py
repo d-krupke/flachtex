@@ -2,7 +2,7 @@ from flachtex.comments import remove_comments
 from flachtex import FileFinder, expand_file
 
 # For this example, we provide the files as dictionary. You can skip the part with the
-# FileFinder if you are working on you file system.
+# FileFinder if you are working on your file system.
 document = {
     "main.tex":
         r"""
