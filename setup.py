@@ -7,12 +7,12 @@ def readme():
 
 
 setup(name='flachtex',
-      version='0.1.5',
+      version='0.1.6',
       description='A traceable LaTeX flattener.',
       long_description=readme(),
       long_description_content_type="text/markdown",
       classifiers=[
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 3 - Beta',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 3',
       ],

@@ -60,6 +60,7 @@ class TraceableString:
     def __init__(self, content: str, origin, offset: int = 0):
         self.content = content
         self.origins = [OriginOfRange(0, len(content), origin, offset)]
+        self._line_index = None
 
     def __len__(self):
         return len(self.content)
@@ -95,6 +96,18 @@ class TraceableString:
         for o in self.origins:
             if i in o:
                 return o.origin, o.get_offset(i)
+
+    def _populate_line_index(self):
+        l = 0
+        while l >= 0:
+            self._line_index.append(l)
+            l = self.content.find("\n", l)
+
+    def get_origin_of_line(self, line, col=0):
+        if self._line_index is None:
+            self._populate_line_index()
+        i = self._line_index[line] + col
+        return self.get_origin(i)
 
     def to_json(self):
         return {
