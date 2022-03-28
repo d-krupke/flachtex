@@ -98,6 +98,7 @@ class TraceableString:
                 return o.origin, o.get_offset(i)
 
     def _populate_line_index(self):
+        self._line_index = []
         l = 0
         while l >= 0:
             self._line_index.append(l)
