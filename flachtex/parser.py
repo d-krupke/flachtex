@@ -116,6 +116,8 @@ def expand_file_and_attach_sources(file_path: str,
     """
     sources = {}
 
+    file_finder = file_finder if file_finder else FileFinder(os.path.dirname(file_path),
+                                                             file_path)
     def make_entry(p):
         if p not in sources:
             source = {}
