@@ -101,3 +101,33 @@ def expand_file(file_path: str,
         offset += len(insertion) - len(match)
     cycle_prevention.pop()
     return content
+
+
+def expand_file_and_attach_sources(file_path: str,
+                                   skip_rules: typing.List[SkipRule] = BASIC_SKIP_RULES,
+                                   include_rules: typing.List[IncludeRule] = BASIC_INCLUDE_RULES,
+                                   file_finder: FileFinder = None,
+                                   cycle_prevention: CyclePrevention = None) \
+        -> typing.Tuple[TraceableString, typing.Dict]:
+    """
+    Analogous to `expand_file` but will also return a dict with the used sources.
+    The sources have the shape {"path": {"content": "...", "includes": ["include1", ...]}}.
+    Thus, not only allowing to see the sources but also which file each source will include.
+    """
+    sources = {}
+
+    def make_entry(p):
+        if p not in sources:
+            source = {}
+            source["content"] = file_finder.read(p)
+            source["includes"] = []
+            sources[p] = source
+
+    def cb(file_path, insertion_file, cmd):
+        make_entry(file_path)  # this is actually only critical for the document's root.
+        make_entry(insertion_file)
+        sources[file_path]["includes"].append(insertion_file)
+
+    flattened_doc = expand_file(file_path, skip_rules, include_rules, file_finder, cycle_prevention, cb=cb)
+
+    return flattened_doc, sources

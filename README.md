@@ -50,6 +50,7 @@ optional arguments:
   -h, --help         show this help message and exit
   --to_json          Return a json.
   --remove_comments  Remove comments.
+  --attach           Attach sources to json.
 ```
 
 ## Python
