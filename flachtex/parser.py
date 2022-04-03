@@ -3,7 +3,7 @@ import typing
 
 from flachtex.cycle_prevention import CyclePrevention
 from flachtex.filefinder import FileFinder
-from flachtex.tracrable_string import TraceableString
+from flachtex.traceable_string import TraceableString
 from flachtex.rules import IncludeRule, SkipRule, Import, Range, BASIC_SKIP_RULES, \
     BASIC_INCLUDE_RULES
 

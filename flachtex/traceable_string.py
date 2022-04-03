@@ -101,7 +101,7 @@ class TraceableString:
         self._line_index = []
         l = 0
         while l >= 0:
-            self._line_index.append(l)
+            self._line_index.append(l+1 if l!=0 else 0)
             l = self.content.find("\n", l+1)
 
     def get_origin_of_line(self, line, col=0):

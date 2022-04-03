@@ -1,6 +1,6 @@
 import re
 
-from flachtex.tracrable_string import TraceableString
+from flachtex.traceable_string import TraceableString
 
 
 def remove_comments(content: TraceableString) -> TraceableString:
