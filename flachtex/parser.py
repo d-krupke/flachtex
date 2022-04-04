@@ -125,8 +125,8 @@ def expand_file_and_attach_sources(file_path: str,
             source["includes"] = []
             sources[p] = source
 
+    make_entry(file_path)
     def cb(file_path, insertion_file, cmd):
-        make_entry(file_path)  # this is actually only critical for the document's root.
         make_entry(insertion_file)
         sources[file_path]["includes"].append(insertion_file)
 
