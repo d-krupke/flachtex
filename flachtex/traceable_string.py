@@ -1,3 +1,6 @@
+from flachtex.utils import compute_row_index
+
+
 class OriginOfRange:
     def __init__(self, begin, end, origin, offset: int = 0):
         self.origin = origin
@@ -98,11 +101,7 @@ class TraceableString:
                 return o.origin, o.get_offset(i)
 
     def _populate_line_index(self):
-        self._line_index = []
-        l = 0
-        while l >= 0:
-            self._line_index.append(l+1 if l!=0 else 0)
-            l = self.content.find("\n", l+1)
+        self._line_index = compute_row_index(self.content)
 
     def get_origin_of_line(self, line, col=0):
         if self._line_index is None:
