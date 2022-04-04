@@ -30,7 +30,7 @@ def apply_skip_rules(content, skip_rules, context):
     sorted_skips = sort_and_check_ranges(skips, context)
     offset = 0
     for skip in sorted_skips:
-        content = content[:skip.begin] + content[skip.end:]
+        content = content[:skip.begin+offset] + content[skip.end+offset:]
         offset -= len(skip)
     return content
 
