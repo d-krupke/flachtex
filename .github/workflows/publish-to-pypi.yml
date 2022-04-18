@@ -17,7 +17,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools twine
       - name: Build and Publish
-        run: python setup.py sdist bdist_wheel
+        run: python setup.py sdist
       - name: Publish
         uses: pypa/gh-action-pypi-publish@master
         with:
