@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="flachtex",
-    version="0.3.0",
+    version="0.3.1",
     description="A traceable LaTeX flattener.",
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -22,7 +22,7 @@ setup(
     author="Dominik Krupke",
     author_email="krupke@ibr.cs.tu-bs.de",
     license="MIT",
-    packages=["flachtex"],
+    packages=["flachtex", "flachtex.rules"],
     install_requires=[],
     entry_points={
         "console_scripts": ["flachtex=flachtex.__main__:main"],
