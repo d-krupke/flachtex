@@ -1,3 +1,9 @@
+"""
+Removing comments can only be done at the end as comments can be used for
+directives for flachtex. Removing them already in the preprocessor would potentially
+lead to unwanted effects.
+If you don't want comments, simply apply the function below to the output.
+"""
 import re
 
 from .traceable_string import TraceableString

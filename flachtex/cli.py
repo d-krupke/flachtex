@@ -1,10 +1,11 @@
-from .command_substitution import find_new_commands, NewCommandSubstitution
-from .rules import BASIC_SKIP_RULES, ChangesRule, BASIC_INCLUDE_RULES, TodonotesRule
-
-from .comments import remove_comments
-from .parser import expand_file, expand_file_and_attach_sources
+import os
 import json
 import argparse
+
+from .preprocessor import Preprocessor
+from .command_substitution import find_new_commands, NewCommandSubstitution
+from .rules import ChangesRule, TodonotesRule
+from .comments import remove_comments
 
 
 def parse_arguments():
@@ -48,15 +49,8 @@ def find_command_definitions(path) -> NewCommandSubstitution:
     :param path:
     :return:
     """
-    skip_rules = BASIC_SKIP_RULES
-    replacement_rules = []
-    include_rules = BASIC_INCLUDE_RULES
-    doc = expand_file(
-        path,
-        skip_rules=skip_rules,
-        replacement_rules=replacement_rules,
-        include_rules=include_rules,
-    )
+    preprocessor = Preprocessor(os.path.dirname(path))
+    doc = preprocessor.expand_file(path)
     cmds = find_new_commands(doc)
     ncs = NewCommandSubstitution()
     for cmd in cmds:
@@ -66,37 +60,20 @@ def find_command_definitions(path) -> NewCommandSubstitution:
 
 def main():
     args = parse_arguments()
-
-    # rules to apply
-    skip_rules = BASIC_SKIP_RULES
+    file_path = args.path[0]
+    preprocessor = Preprocessor(os.path.dirname(file_path))
     if args.remove_todos:
-        skip_rules += [TodonotesRule()]
-    replacement_rules = [ChangesRule(args.changes_prefix)] if args.changes else []
-    replacement_rules += [find_command_definitions(args.path[0])]
-    include_rules = BASIC_INCLUDE_RULES
-
-    if args.attach:
-        doc, sources = expand_file_and_attach_sources(
-            args.path[0],
-            skip_rules=skip_rules,
-            replacement_rules=replacement_rules,
-            include_rules=include_rules,
-        )
-    else:
-        doc = expand_file(
-            args.path[0],
-            skip_rules=skip_rules,
-            replacement_rules=replacement_rules,
-            include_rules=include_rules,
-        )
-        sources = None
+        preprocessor.skip_rules.append(TodonotesRule())
+    if args.changes:
+        preprocessor.substitution_rules.append(ChangesRule(args.changes_prefix))
+    preprocessor.substitution_rules.append(find_command_definitions(file_path))
+    doc = preprocessor.expand_file(file_path)
 
     if args.remove_comments:
         doc = remove_comments(doc)
     if args.to_json:
         data = doc.to_json()
-        if sources:
-            data["sources"] = sources
+        data["sources"] = preprocessor.structure
         print(json.dumps(data))
     else:
         print(str(doc))

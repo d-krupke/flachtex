@@ -9,7 +9,7 @@ import typing
 
 from flachtex.traceable_string import TraceableString
 from flachtex.command_finder import CommandFinder
-from flachtex.rules import ReplacementRule, Replacement
+from flachtex.rules import SubstitutionRule, Substitution
 
 
 class NewCommandDefinition:
@@ -58,7 +58,7 @@ def find_new_commands(
         yield NewCommandDefinition(command_name, num_parameters, command)
 
 
-class NewCommandSubstitution(ReplacementRule):
+class NewCommandSubstitution(SubstitutionRule):
     """
     Substitute commands defined, e.g., by \newcommand.
     Currently, default parameters are not supported.
@@ -100,9 +100,9 @@ class NewCommandSubstitution(ReplacementRule):
                 offset += len(p) - (match.end() - match.start())
         return command
 
-    def find_all(self, content: TraceableString) -> typing.Iterable[Replacement]:
+    def find_all(self, content: TraceableString) -> typing.Iterable[Substitution]:
         for match in self._command_finder.find_all(str(content)):
             definition = self._commands[str(match.command)]
             parameters = [content[p[0] : p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
-            yield Replacement(match.start, match.end, sub)
+            yield Substitution(match.start, match.end, sub)

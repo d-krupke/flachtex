@@ -1,13 +1,15 @@
 import unittest
 
 from flachtex import FileFinder
-from flachtex import expand_file_and_attach_sources
+from flachtex.preprocessor import Preprocessor
 
 
 class OriginTest(unittest.TestCase):
     def flatten(self, document, root="main.tex"):
-        file_finder = FileFinder("/", root, document)
-        return expand_file_and_attach_sources(root, file_finder=file_finder)
+        preprocessor = Preprocessor("/")
+        file_finder = FileFinder("/", document)
+        preprocessor.file_finder = file_finder
+        return preprocessor.expand_file(root), preprocessor.structure
 
     def test_no_import(self):
         test_document = {

@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{todonotes}
+\usepackage{xspace}
+
+\newcommand{\importantterm}{\emph{ImportantTerm}\xspace}
+
+%%FLACHTEX-SKIP-START
+Technicalities (e.g., configuration of Journal-template) that we want to skip.
+%%FLACHTEX-SKIP-STOP
+
+\begin{document}
+
+\section{Introduction}
+
+\todo[inline]{This TODO will not be shown because we don't want to analyze it.}
+
+Let us use \importantterm here.
+
+% including part_a with 'input' and without extension
+\input{./part_a}
+
+% including part_b with 'include' and with extension
+\include{./part_b.tex}
+
+\end{document}

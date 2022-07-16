@@ -19,17 +19,16 @@ class FileSystem:
 
 
 class FileFinder:
-    def __init__(self, project_root, root_file, file_system=None):
+    def __init__(self, project_root, file_system=None):
         """
         :param project_root: The root of the project (relative to cwd)
-        :param root_file: The path to the root file (relative to cwd)
         :param file_system: A module to open files, can be replaced with a simple dict
             for simple testing.
         """
         if not file_system:
             file_system = FileSystem()
         self.file_system = file_system
-        self._PATH = [project_root, os.path.dirname(root_file)]
+        self._PATH = [project_root]
         self._project_root = project_root
 
     def find_best_matching_path(self, path: str, origin: str) -> str:

@@ -1,18 +1,108 @@
 # flachtex
 
-A tool to flatten complex LaTeX-documents, i.e., create a single file out of a complex
-document structure.
-Its primary feature is that it remembers from which file (and position within the file)
-each character came. Additionally, it has some extra commands that allow to explicitly
-tell *flachtex* what to do, even in complicated scenarios.
+Tools (e.g. [cktex](https://www.nongnu.org/chktex/),
+[YaLafi](https://github.com/matze-dd/YaLafi), 
+[TeXtidote](https://github.com/sylvainhalle/textidote)) for analyzing LaTeX-documents often only work on single files, making them tedious
+to use for complex documents. The purpose of
+*flachtex* is to preprocess even complicated LaTeX-documents such that they can be
+easily analyzed as a single document. The important part is that it also provides
+a data structure to reverse that process and get the origin of a specific part
+(allowing to trace issues back to their source). While there are other tools to flatten
+LaTeX, they all are neither capable of dealing with complex imports nor do they allow
+you to trace back to the origins.
 
-There are many other tools to flatten LaTeX, but I did not find a tool that could handle
-my dissertation (that uses *subimport* and has some logic involved) and also was capable
-of telling you where each word came from. The second part is important for automated 
-spell, grammar, and code checker: For long documents, you do not want to search where
-this error was made (in general, no auto-fix is possible). *flachtex* solves this problem
-but is slower than other tools because of the additional bookkeeping. There is still
-room to improve the performance, but it is fast enough for me.
+Noteable features of *flachtex* are:
+* Flattening of LaTeX-documents with various rules (`\include`, `\input`, `\subimport`,`%%FLACHTEX-EXPLICIT-IMPORT[path/to/file]`...).
+* Any character in the output can be traced back to its origin.
+* Remove comments.
+* Remove `\todo{...}`.
+* Remove highlights of `\usepackage{changes}`. (This substitution is actually more robust than the one supplied with the package.)
+* Substitute commands defined by `\newcommand`.
+* A modular design that allows to add additional rules.
+
+## Installation
+
+*flachtex* is available via pip: `pip install flachtex`.
+
+## Example
+
+Let us look on a quick example that shows the power of the tool. We have a LaTeX-document
+consisting of three files.
+
+*main.tex*
+```tex
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{todonotes}
+\usepackage{xspace}
+
+\newcommand{\importantterm}{\emph{ImportantTerm}\xspace}
+
+%%FLACHTEX-SKIP-START
+Technicalities (e.g., configuration of Journal-template) that we want to skip.
+%%FLACHTEX-SKIP-STOP
+
+\begin{document}
+
+\section{Introduction}
+
+\todo[inline]{This TODO will not be shown because we don't want to analyze it.}
+
+Let us use \importantterm here.
+
+% including part_a with 'input' and without extension
+\input{./part_a}
+
+% including part_b with 'include' and with extension
+\include{./part_b.tex}
+
+\end{document}
+```
+
+*part_a.tex*
+```tex
+\subsection{Part A}
+
+This is Part A. We can also use \importantterm here.
+```
+
+*part_b.tex*
+```tex
+\subsection{Part B}
+And Part B.
+```
+
+*flachtex* can create the following output for us that is much easier to analyze.
+
+```tex
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{todonotes}
+\usepackage{xspace}
+
+\newcommand{\importantterm}{\emph{ImportantTerm}\xspace}
+
+\begin{document}
+
+\section{Introduction}
+
+Let us use \emph{ImportantTerm}\xspace here.
+
+\subsection{Part A}
+
+This is Part A. We can also use \emph{ImportantTerm}\xspace here.
+
+\subsection{Part B}
+And Part B.
+
+\end{document}
+```
+(currently, *flachtex* will actually add some redundant empty lines, but those usually
+do no harm and could be easily eliminated by some simple postprocessing.)
+
+## Flatten LaTeX-documents
 
 Currently, *flachtex* supports file inclusions of the following form:
 ```
@@ -31,9 +121,7 @@ Complex import logic that cannot be parsed by flachtex.
 %%FLACHTEX-SKIP-STOP
 ```
 
-## Installation
 
-*flachtex* is available via pip: `pip install flachtex`.
 
 ## CLI
 
