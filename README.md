@@ -125,4 +125,28 @@ output. (It would not be too difficult to add some simple resolution rules inste
 simply throwing an exception).
 
 
+## Usage for cleaning 'changes' of '\usepackage{changes}'
+
+The [changes-package](https://ctan.org/pkg/changes?lang=en) is helpful for highlighting
+the changes, which is a good practice, e.g., when writing journal papers (which 
+usually have to go through one or two reviewing iterations). These can of course
+disturb automatic language checkers and they have to be removed in the end. The script
+that is attached to the original package unfortunately is not compatible with some
+usages (e.g., comments can lead it astray).
+*flachtex* is capable of removing the highlights done with *changes* in a robust way.
+There are some nasty ways to trick it, but if you use brackets, it should work fine and
+independent of escaped symbols, comments, or line breaks.
+
+## Substitution of \newcommand
+
+It is reasonably common to create your own commands with `\newcommand', e.g., for some
+terms which you may want to change later. If you want to analyze the tex-document, this
+can become cumbersome. Thus, *flachtex* gives you the option to automatically substitute 
+such commands.
+
+The primary reason I added this functionality to this tool (and not some higher level tool)
+is that I also saw that some people define their own \input/\include commands, which
+could not be imported easily without this feature.
+
+
 **This tool is still work in progress.**

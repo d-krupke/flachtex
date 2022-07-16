@@ -1,4 +1,4 @@
-from flachtex.utils import compute_row_index
+from .utils import compute_row_index
 
 
 class OriginOfRange:
@@ -45,7 +45,7 @@ class OriginOfRange:
         return shortened
 
     def __lt__(self, other):
-        return self.begin < other.begin
+        return self.begin < other.start
 
     def get_offset(self, i):
         if i not in self:
