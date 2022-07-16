@@ -172,7 +172,7 @@ class BasicSkipRule(RegexSkipRule):
 
 class NativeIncludeRule(RegexIncludeRule):
     """
-    Detects includes of the form `\input{/path/file.tex}` and `\include{/path/file.tex}`
+    Detects includes of the form `\\input{/path/file.tex}` and `\\include{/path/file.tex}`
     """
 
     def __init__(self):
@@ -187,7 +187,7 @@ class NativeIncludeRule(RegexIncludeRule):
 class SubimportRule(RegexIncludeRule):
     """
     Detects imports by the subimport package.
-    These can have the form `\subimport{path}{file}` or  `\subimport*{path}{file}`.
+    These can have the form `\\subimport{path}{file}` or  `\\subimport*{path}{file}`.
     """
 
     expr = r"^(([^%])|(\\%))*?(?P<command>\\subimport\*?\{(?P<dir>[^}]*)\}\{(?P<file>[^}]*)\})"

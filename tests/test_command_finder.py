@@ -27,24 +27,26 @@ class CommandFinderTest(unittest.TestCase):
         cf = CommandFinder()
         cf.add_command("todo", 1)
         text = "This is a \\todo{bla} simple string\n bla"
-        self.assertEqual(cf.find(text), CommandMatch("todo", 10, 21, [(16, 19)], []))
+        m = cf.find(text)
+        self.assertEqual(m, CommandMatch("todo", 10, 20, [(16, 19)], []))
+        self.assertEqual(text[m.start:m.end], "\\todo{bla}")
 
     def test_opt_param(self):
         cf = CommandFinder()
         cf.add_command("todo", 1, 1)
         text = "This is a \\todo{bla} simple string\n bla"
         self.assertEqual(
-            cf.find(text), CommandMatch("todo", 10, 21, [(16, 19)], [None])
+            cf.find(text), CommandMatch("todo", 10, 20, [(16, 19)], [None])
         )
 
     def test_newline(self):
         cf = CommandFinder()
         cf.add_command("todo", 1)
         text = "This is a \\todo{bla\nbla} simple string\n bla"
-        self.assertEqual(cf.find(text), CommandMatch("todo", 10, 25, [(16, 23)], []))
+        self.assertEqual(cf.find(text), CommandMatch("todo", 10, 24, [(16, 23)], []))
 
     def test_comment(self):
         cf = CommandFinder()
         cf.add_command("todo", 1)
         text = "This is a \\todo{bla%}\nbla} simple string\n bla"
-        self.assertEqual(cf.find(text), CommandMatch("todo", 10, 27, [(16, 25)], []))
+        self.assertEqual(cf.find(text), CommandMatch("todo", 10, 26, [(16, 25)], []))
