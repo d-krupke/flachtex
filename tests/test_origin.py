@@ -24,11 +24,10 @@ class OriginTest(unittest.TestCase):
         self.assertEqual(flat.get_origin_of_line(2, 4), ("main.tex", 18))
         self.assertEqual(flat.get_origin(17), ("main.tex", 17))
 
-
     def test_single_import(self):
         test_document = {
             "main.tex": "line 0\nline 1\n\\input{sub.tex}\nline 4\n",
-            "sub.tex": "line 2\nline 3"
+            "sub.tex": "line 2\nline 3",
         }
         flat, sources = self.flatten(test_document)
         for path, source in test_document.items():
@@ -39,4 +38,3 @@ class OriginTest(unittest.TestCase):
         self.assertEqual(flat.get_origin(4), ("main.tex", 4))
         self.assertEqual(flat.get_origin_of_line(2, 4), ("sub.tex", 4))
         self.assertEqual(flat.get_origin(17), ("sub.tex", 3))
-

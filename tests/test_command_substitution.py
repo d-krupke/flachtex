@@ -2,10 +2,14 @@ import unittest
 
 from flachtex import CommandFinder, TraceableString
 from flachtex.command_finder import CommandMatch
-from flachtex.command_substitution import find_new_commands, NewCommandSubstitution, \
-    NewCommandDefinition
+from flachtex.command_substitution import (
+    find_new_commands,
+    NewCommandSubstitution,
+    NewCommandDefinition,
+)
 
-doc1 = TraceableString(r"""
+doc1 = TraceableString(
+    r"""
 \newcommand{\MSClength}{MSC-MS\xspace}
 \newcommand{\MSCtotEnergy}{MSC-TE\xspace}
 \newcommand{\MSClocEnergy}{MSC-BE\xspace}
@@ -20,7 +24,10 @@ doc1 = TraceableString(r"""
 \newcommand{\mincover}{$\Lambda$-cover\xspace}
 
 \MIPone
-""", "main.tex")
+""",
+    "main.tex",
+)
+
 
 class CommandSubstitutionTest(unittest.TestCase):
     def test_empty(self):
@@ -32,6 +39,8 @@ class CommandSubstitutionTest(unittest.TestCase):
         self.assertEqual(len(cmds), 11)
         sub = NewCommandSubstitution()
         for cmd in cmds:
-            sub.new_command(NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command))
+            sub.new_command(
+                NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command)
+            )
         replacements = list(sub.find_all(doc1))
         self.assertEqual(len(replacements), 1)

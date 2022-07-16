@@ -112,11 +112,15 @@ class TraceableString:
     def to_json(self):
         return {
             "content": self.content,
-            "origins": [{"begin": o.begin,
-                         "end": o.end,
-                         "origin": str(o.origin),
-                         "offset": o.offset}
-                        for o in self.origins]
+            "origins": [
+                {
+                    "begin": o.begin,
+                    "end": o.end,
+                    "origin": str(o.origin),
+                    "offset": o.offset,
+                }
+                for o in self.origins
+            ],
         }
 
     def __add__(self, other):

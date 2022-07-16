@@ -43,8 +43,9 @@ class Import(Range):
 
 
 class Replacement(Range):
-    def __init__(self, begin: int, end: int,
-                 replacement_text: typing.Optional[TraceableString]):
+    def __init__(
+        self, begin: int, end: int, replacement_text: typing.Optional[TraceableString]
+    ):
         super().__init__(begin, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
         self.replacement_text = replacement_text
@@ -54,7 +55,6 @@ class Replacement(Range):
 
 
 class ReplacementRule(abc.ABC):
-
     @abc.abstractmethod
     def find_all(self, content: TraceableString) -> typing.Iterable[Replacement]:
         pass
@@ -85,8 +85,11 @@ class ChangesRule(ReplacementRule):
         cf.add_command(self._comment, 1, 1)
         for match in cf.find_all(str(content)):
             if match.command in (self._added, self._replaced, self._highlight):
-                yield Replacement(match.start, match.end,
-                                  content[match.parameters[0][0]: match.parameters[0][1]])
+                yield Replacement(
+                    match.start,
+                    match.end,
+                    content[match.parameters[0][0] : match.parameters[0][1]],
+                )
             elif match.command in (self._deleted, self._comment):
                 yield Replacement(match.start, match.end, None)
 
@@ -128,7 +131,6 @@ class RegexSkipRule(SkipRule):
 
 
 class IncludeRule(abc.ABC):
-
     @abc.abstractmethod
     def find_all(self, content: str) -> typing.Iterable[Import]:
         pass
@@ -149,19 +151,22 @@ class RegexIncludeRule(IncludeRule):
 
 class BasicSkipRule(RegexSkipRule):
     """
-    Skips parts of the form
-    ```
-%%FLACHTEX-SKIP-START
-...
-%%FLACHTEX-SKIP-STOP
+        Skips parts of the form
+        ```
+    %%FLACHTEX-SKIP-START
+    ...
+    %%FLACHTEX-SKIP-STOP
     """
 
     def __init__(self):
         super().__init__(
-            r"(?P<skipped_part>(^\s*%%FLACHTEX-SKIP-START).*?(^\s*%%FLACHTEX-SKIP-STOP))")
+            r"(?P<skipped_part>(^\s*%%FLACHTEX-SKIP-START).*?(^\s*%%FLACHTEX-SKIP-STOP))"
+        )
 
     def determine_skip(self, match: re.Match):
-        span_to_be_skipped = Range(match.start("skipped_part"), match.end("skipped_part"))
+        span_to_be_skipped = Range(
+            match.start("skipped_part"), match.end("skipped_part")
+        )
         return span_to_be_skipped
 
 
@@ -193,8 +198,9 @@ class SubimportRule(RegexIncludeRule):
     def determine_include(self, match: re.Match):
         # This function implements the functionality for the subimports library.
         # The import is separated into two parts
-        import_path = os.path.join(match.group("dir").strip(),
-                                   match.group("file").strip())
+        import_path = os.path.join(
+            match.group("dir").strip(), match.group("file").strip()
+        )
         return Import(match.start("command"), match.end("command"), import_path)
 
 
@@ -202,7 +208,8 @@ class SubimportRule(RegexIncludeRule):
 class ExplicitImportRule(RegexIncludeRule):
     def __init__(self):
         super().__init__(
-            r"^\s*(?P<command>%%FLACHTEX-EXPLICIT-IMPORT\[(?P<path>[^}]*)\])")
+            r"^\s*(?P<command>%%FLACHTEX-EXPLICIT-IMPORT\[(?P<path>[^}]*)\])"
+        )
 
     def determine_include(self, match: re.Match):
         # We are using the group feature of regex to extract the path (<path>)

@@ -11,6 +11,6 @@ def remove_comments(content: TraceableString) -> TraceableString:
     comments.sort()
     offset = 0
     for comment in comments:
-        content = content[:comment[0] + offset] + content[comment[1] + offset:]
+        content = content[: comment[0] + offset] + content[comment[1] + offset :]
         offset -= comment[1] - comment[0]
     return content

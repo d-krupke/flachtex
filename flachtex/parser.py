@@ -4,8 +4,16 @@ import typing
 from .cycle_prevention import CyclePrevention
 from .filefinder import FileFinder
 from .traceable_string import TraceableString
-from .rules import IncludeRule, SkipRule, Import, Range, BASIC_SKIP_RULES, \
-    BASIC_INCLUDE_RULES, ReplacementRule, Replacement
+from .rules import (
+    IncludeRule,
+    SkipRule,
+    Import,
+    Range,
+    BASIC_SKIP_RULES,
+    BASIC_INCLUDE_RULES,
+    ReplacementRule,
+    Replacement,
+)
 
 
 def find_skips(content, skip_rules):
@@ -16,8 +24,7 @@ def find_skips(content, skip_rules):
     return skips
 
 
-def sort_and_check_ranges(skips,
-                          context: str) -> typing.Iterable[Range]:
+def sort_and_check_ranges(skips, context: str) -> typing.Iterable[Range]:
     skips.sort()
     for i, e in enumerate(skips[:-1]):
         if e.intersects(skips[i + 1]):
@@ -30,57 +37,69 @@ def apply_skip_rules(content, skip_rules, context):
     sorted_skips = sort_and_check_ranges(skips, context)
     offset = 0
     for skip in sorted_skips:
-        content = content[:skip.begin + offset] + content[skip.end + offset:]
+        content = content[: skip.begin + offset] + content[skip.end + offset :]
         offset -= len(skip)
     return content
 
 
-def sort_replacements(replacements: typing.List[Replacement], context: str) -> \
-typing.Iterable[Replacement]:
+def _sort_replacements(
+    replacements: typing.List[Replacement], context: str
+) -> typing.Iterable[Replacement]:
     replacements.sort()
+    if len(replacements) <= 1:
+        return replacements
     replacements_ = []
     for i, e in enumerate(replacements[:-1]):
         if e.intersects(replacements[i + 1]):
             continue
         else:
-            replacements_ += e
+            replacements_ += [e]
     return replacements_
 
 
-def find_replacements(content: TraceableString,
-                      replacement_rules: typing.List[ReplacementRule]) \
-        -> typing.List[Replacement]:
+def find_replacements(
+    content: TraceableString, replacement_rules: typing.List[ReplacementRule]
+) -> typing.List[Replacement]:
     replacements = []
     for rule in replacement_rules:
         replacements += [match for match in rule.find_all(content)]
     return replacements
 
 
-def apply_replacement_rules(content: TraceableString,
-                            replacement_rules: typing.List[ReplacementRule],
-                            context: str):
+def apply_replacement_rules(
+    content: TraceableString,
+    replacement_rules: typing.List[ReplacementRule],
+    context: str,
+):
     replacements = find_replacements(content, replacement_rules)
     max_itererations = 10
     while replacements and max_itererations:
-        replacements = sort_replacements(replacements, context)
+        replacements = _sort_replacements(replacements, context)
         offset = 0
         for replacement in replacements:
             if replacement.replacement_text:
-                content = content[:replacement.begin + offset]\
-                          + replacement.replacement_text\
-                          + content[replacement.end + offset:]
-                offset -= (len(replacement) - len(replacement.replacement_text))
+                content = (
+                    content[: replacement.begin + offset]
+                    + replacement.replacement_text
+                    + content[replacement.end + offset :]
+                )
+                offset -= len(replacement) - len(replacement.replacement_text)
             else:
-                content = content[:replacement.begin + offset]\
-                          + content[replacement.end + offset:]
+                content = (
+                    content[: replacement.begin + offset]
+                    + content[replacement.end + offset :]
+                )
                 offset -= len(replacement)
         max_itererations -= 1
         replacements = find_replacements(content, replacement_rules)
+    if max_itererations == 0:
+        print("%WARNING: Exceeded maximal replacement iterations.")
     return content
 
 
-def find_imports(content,
-                 include_rules: typing.Iterable[IncludeRule]) -> typing.List[Import]:
+def find_imports(
+    content: TraceableString, include_rules: typing.Iterable[IncludeRule]
+) -> typing.List[Import]:
     content = str(content)
     imports = []
     for rule in include_rules:
@@ -88,8 +107,9 @@ def find_imports(content,
     return imports
 
 
-def sort_imports(imports,
-                 context: str) -> typing.Iterable[Import]:
+def _sort_imports(
+    imports: typing.List[Import], context: str
+) -> typing.Iterable[Import]:
     imports.sort()
     for i, e in enumerate(imports[:-1]):
         if e.intersects(imports[i + 1]):
@@ -97,28 +117,30 @@ def sort_imports(imports,
     return imports
 
 
-def parse(file_path: str,
-          file_finder: FileFinder,
-          skip_rules: typing.List[SkipRule],
-          include_rules: typing.List[IncludeRule],
-          replacement_rules: typing.List[ReplacementRule]) \
-        -> typing.Tuple[TraceableString, typing.Iterable[Import]]:
+def parse(
+    file_path: str,
+    file_finder: FileFinder,
+    skip_rules: typing.List[SkipRule],
+    include_rules: typing.List[IncludeRule],
+    replacement_rules: typing.List[ReplacementRule],
+) -> typing.Tuple[TraceableString, typing.Iterable[Import]]:
     content = TraceableString(file_finder.read(file_path), origin=file_path)
     content = apply_skip_rules(content, skip_rules, context=file_path)
     content = apply_replacement_rules(content, replacement_rules, context=file_path)
     imports = find_imports(content, include_rules)
-    sorted_imports = sort_imports(imports, context=file_path)
+    sorted_imports = _sort_imports(imports, context=file_path)
     return content, sorted_imports
 
 
-def expand_file(file_path: str,
-                skip_rules: typing.List[SkipRule] = BASIC_SKIP_RULES,
-                include_rules: typing.List[IncludeRule] = BASIC_INCLUDE_RULES,
-                replacement_rules: typing.Optional[typing.List[ReplacementRule]] = None,
-                file_finder: typing.Optional[FileFinder] = None,
-                cycle_prevention: typing.Optional[CyclePrevention] = None,
-                cb: typing.Optional[
-                    typing.Callable[[str, str, str], None]] = None) -> TraceableString:
+def expand_file(
+    file_path: str,
+    skip_rules: typing.List[SkipRule] = BASIC_SKIP_RULES,
+    include_rules: typing.List[IncludeRule] = BASIC_INCLUDE_RULES,
+    replacement_rules: typing.Optional[typing.List[ReplacementRule]] = None,
+    file_finder: typing.Optional[FileFinder] = None,
+    cycle_prevention: typing.Optional[CyclePrevention] = None,
+    cb: typing.Optional[typing.Callable[[str, str, str], None]] = None,
+) -> TraceableString:
     """
     Expands a file recursively by including all imports as well as skipping all parts
     according to the skip rules.
@@ -134,36 +156,51 @@ def expand_file(file_path: str,
     """
     cycle_prevention = cycle_prevention if cycle_prevention else CyclePrevention()
     replacement_rules = replacement_rules if replacement_rules else []
-    file_finder = file_finder if file_finder else FileFinder(os.path.dirname(file_path),
-                                                             file_path)
-    content, sorted_imports = parse(file_path, file_finder, skip_rules, include_rules,
-                                    replacement_rules)
+    file_finder = (
+        file_finder
+        if file_finder
+        else FileFinder(os.path.dirname(file_path), file_path)
+    )
+    content, sorted_imports = parse(
+        file_path, file_finder, skip_rules, include_rules, replacement_rules
+    )
     offset = 0
     cycle_prevention.push(file_path, context=file_path)
     for match in sorted_imports:
-        insertion_file = file_finder.find_best_matching_path(match.path, origin=file_path)
+        insertion_file = file_finder.find_best_matching_path(
+            match.path, origin=file_path
+        )
         if cb:
-            cb(file_path, insertion_file,
-               content[match.begin + offset:match.end + offset])
-        insertion = expand_file(insertion_file, skip_rules,
-                                include_rules, replacement_rules, file_finder,
-                                cycle_prevention, cb)
-        content = content[:match.begin + offset] + insertion + content[
-                                                               match.end + offset:]
+            cb(
+                file_path,
+                insertion_file,
+                content[match.begin + offset : match.end + offset],
+            )
+        insertion = expand_file(
+            insertion_file,
+            skip_rules,
+            include_rules,
+            replacement_rules,
+            file_finder,
+            cycle_prevention,
+            cb,
+        )
+        content = (
+            content[: match.begin + offset] + insertion + content[match.end + offset :]
+        )
         offset += len(insertion) - len(match)
     cycle_prevention.pop()
     return content
 
 
-def expand_file_and_attach_sources(file_path: str,
-                                   skip_rules: typing.List[SkipRule] = BASIC_SKIP_RULES,
-                                   include_rules: typing.List[
-                                       IncludeRule] = BASIC_INCLUDE_RULES,
-                                   replacement_rules: typing.Optional[
-                                       typing.List[ReplacementRule]] = None,
-                                   file_finder: FileFinder = None,
-                                   cycle_prevention: CyclePrevention = None) \
-        -> typing.Tuple[TraceableString, typing.Dict]:
+def expand_file_and_attach_sources(
+    file_path: str,
+    skip_rules: typing.List[SkipRule] = BASIC_SKIP_RULES,
+    include_rules: typing.List[IncludeRule] = BASIC_INCLUDE_RULES,
+    replacement_rules: typing.Optional[typing.List[ReplacementRule]] = None,
+    file_finder: FileFinder = None,
+    cycle_prevention: CyclePrevention = None,
+) -> typing.Tuple[TraceableString, typing.Dict]:
     """
     Analogous to `expand_file` but will also return a dict with the used sources.
     The sources have the shape {"path": {"content": "...", "includes": ["include1", ...]}}.
@@ -171,8 +208,11 @@ def expand_file_and_attach_sources(file_path: str,
     """
     sources = {}
 
-    file_finder = file_finder if file_finder else FileFinder(os.path.dirname(file_path),
-                                                             file_path)
+    file_finder = (
+        file_finder
+        if file_finder
+        else FileFinder(os.path.dirname(file_path), file_path)
+    )
 
     def make_entry(p):
         if p not in sources:
@@ -187,8 +227,14 @@ def expand_file_and_attach_sources(file_path: str,
         make_entry(insertion_file)
         sources[file_path]["includes"].append(insertion_file)
 
-    flattened_doc = expand_file(file_path, skip_rules, include_rules, replacement_rules,
-                                file_finder,
-                                cycle_prevention, cb=cb)
+    flattened_doc = expand_file(
+        file_path,
+        skip_rules,
+        include_rules,
+        replacement_rules,
+        file_finder,
+        cycle_prevention,
+        cb=cb,
+    )
 
     return flattened_doc, sources

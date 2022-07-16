@@ -4,7 +4,6 @@ from flachtex import TraceableString
 
 
 class TraceableStringTest(unittest.TestCase):
-
     def test_1(self):
         ts = TraceableString("content", "origin", 0)
         self.assertEqual(ts.get_origin(2), ("origin", 2))

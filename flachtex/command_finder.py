@@ -97,9 +97,14 @@ class CommandMatch:
     A match of the CommandFinder.
     """
 
-    def __init__(self, command: str, start: int, end: int,
-                 parameters: typing.List[typing.Tuple[int, int]],
-                 opt_parameters: typing.List[typing.Optional[typing.Tuple[int, int]]]):
+    def __init__(
+        self,
+        command: str,
+        start: int,
+        end: int,
+        parameters: typing.List[typing.Tuple[int, int]],
+        opt_parameters: typing.List[typing.Optional[typing.Tuple[int, int]]],
+    ):
         self.command = command  # command name
         self.start = start  # position of the start of the command
         self.end = end  # position after the last parameter of the command
@@ -107,14 +112,28 @@ class CommandMatch:
         self.opt_parameters = opt_parameters  # list of the optional parameters
 
     def __repr__(self):
-        return f"{self.start}:{self.end} \\{self.command}" \
-               + "["+"".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)+"]" \
-               + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
+        return (
+            f"{self.start}:{self.end} \\{self.command}"
+            + "["
+            + "".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)
+            + "]"
+            + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
+        )
 
     def __eq__(self, other):
-        return (self.command, self.start, self.end, self.parameters, self.opt_parameters) \
-               == (other.command, other.start, other.end, other.parameters,
-                   other.opt_parameters)
+        return (
+            self.command,
+            self.start,
+            self.end,
+            self.parameters,
+            self.opt_parameters,
+        ) == (
+            other.command,
+            other.start,
+            other.end,
+            other.parameters,
+            other.opt_parameters,
+        )
 
 
 class CommandFinder:
@@ -141,7 +160,9 @@ class CommandFinder:
         if name not in self._commands:
             return [], []
         n, n_opt = self._commands[name]
-        opt_params = [self._read_parameter(stream, "[", "]", False) for _ in range(n_opt)]
+        opt_params = [
+            self._read_parameter(stream, "[", "]", False) for _ in range(n_opt)
+        ]
         params = [self._read_parameter(stream, "{", "}") for _ in range(n)]
         return opt_params, params
 
@@ -155,7 +176,9 @@ class CommandFinder:
             command += stream.next()
         return command
 
-    def _read_parameter(self, stream: LatexStream, begin: str, end: str, mandatory=True):
+    def _read_parameter(
+        self, stream: LatexStream, begin: str, end: str, mandatory=True
+    ):
         stream.skip_whitespace_and_comments()
         if not mandatory and stream.peek(True) != begin:
             # No begin-symbol ({[) -> no parameter if not mandatory
@@ -173,6 +196,7 @@ class CommandFinder:
             return (start, stream.pos() - 1)  # at }]
         else:  # parameter without begin/end-symbols ([],{})
             if self._strict:
+                print(stream._text[stream.pos() - 10 : stream.pos() + 10])
                 raise ValueError("Parameters without brackets.")
             start = stream.pos()
             if stream.peek() == "\\":
@@ -183,6 +207,12 @@ class CommandFinder:
             else:
                 stream.next()
                 return (start, stream.pos())
+
+    def _read_new_command_parameters(self, stream: LatexStream):
+        command_name = self._read_parameter(stream, "{", "}", mandatory=True)
+        opt_params = [self._read_parameter(stream, "[", "]", mandatory=False)]
+        definition = self._read_parameter(stream, "{", "}", mandatory=True)
+        return opt_params, [command_name, definition]
 
     def find(self, text: str, begin: int = 0) -> typing.Optional[CommandMatch]:
         """
@@ -196,16 +226,18 @@ class CommandFinder:
             if stream.peek(True) == "\\":
                 begin = stream.pos()
                 command = self._read_command_name(stream)
-                if command == "newcommand" and command not in self._commands:
-                    #  In the \\newcommand definition, the commands are not actually
-                    # applied, so we want to skip them.
-                    while self._read_parameter(stream, "[", "]", mandatory=False):
-                        pass
-                    self._read_parameter(stream, "{", "}")  # skip definition name
+                if command in ("newcommand", "renewcommand"):
+                    if command in self._commands:
+                        opt_params, params = self._read_new_command_parameters(stream)
+                        end = stream.pos()
+                        return CommandMatch(command, begin, end, params, opt_params)
+                    else:
+                        #  In the \\newcommand definition, the commands are not actually
+                        # applied, so we want to skip them.
+                        self._read_parameter(stream, "{", "}")  # skip definition name
                 elif command in self._commands:
                     opt_params, params = self._read_parameters(stream, command)
                     end = stream.pos()
-                    assert not stream.in_comment and not stream.is_escaped
                     return CommandMatch(command, begin, end, params, opt_params)
             else:
                 stream.next()

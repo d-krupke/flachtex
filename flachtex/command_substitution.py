@@ -17,9 +17,10 @@ class NewCommandDefinition:
     For defining a LaTeX-command definition with `\\newcommand`. Note that optional
     parameters are not supported right now.
     """
-    def __init__(self, name: TraceableString,
-                 num_parameters: int,
-                 command: TraceableString):
+
+    def __init__(
+        self, name: TraceableString, num_parameters: int, command: TraceableString
+    ):
         """
         :param name: The name of the command.
         :param num_parameters: The number of (mandatory parameters).
@@ -30,11 +31,12 @@ class NewCommandDefinition:
         self.command = command
 
     def __repr__(self):
-        return f"\\newcommand[{self.num_parameters}]{{{self.name}}}{{{self.command}}}"
+        return f"\\newcommand{{{self.name}}}[{self.num_parameters}]{{{self.command}}}"
 
 
-def find_new_commands(latex_document: TraceableString) \
-        -> typing.Iterable[NewCommandDefinition]:
+def find_new_commands(
+    latex_document: TraceableString,
+) -> typing.Iterable[NewCommandDefinition]:
     """
     Find all commands defined by `\newcommand`. Not compatible with optional commands
     right now.
@@ -44,11 +46,13 @@ def find_new_commands(latex_document: TraceableString) \
     cf = CommandFinder(strict=True)
     cf.add_command("newcommand", 2, 1)
     for match in cf.find_all(str(latex_document)):
-        command_name = latex_document[match.parameters[0][0]: match.parameters[0][1]]
-        command = latex_document[match.parameters[1][0]: match.parameters[1][1]]
+        command_name = latex_document[match.parameters[0][0] : match.parameters[0][1]]
+        command = latex_document[match.parameters[1][0] : match.parameters[1][1]]
         if match.opt_parameters[0]:
             opt_par_range = match.opt_parameters[0]
-            num_parameters = int(str(latex_document[opt_par_range[0]: opt_par_range[1]]))
+            num_parameters = int(
+                str(latex_document[opt_par_range[0] : opt_par_range[1]])
+            )
         else:
             num_parameters = 0
         yield NewCommandDefinition(command_name, num_parameters, command)
@@ -74,26 +78,31 @@ class NewCommandSubstitution(ReplacementRule):
         if name[0] == "\\":
             name = name[1:]
         if name in self._commands:
-            print(f"WARNING: Multiple definitions of command '{name}'."
-                  f" Substitution may be buggy.")
+            print(
+                f"%WARNING: Multiple definitions of command '{name}'."
+                f" Substitution may be buggy."
+            )
         self._commands[name] = definition
-        print("add", definition)
+        print("%LOG: Detected", definition)
         self._command_finder.add_command(name, definition.num_parameters)
 
-    def _get_substitution(self,
-                          command: TraceableString,
-                          parameters: typing.List[TraceableString]) -> TraceableString:
+    def _get_substitution(
+        self, command: TraceableString, parameters: typing.List[TraceableString]
+    ) -> TraceableString:
         for i, p in enumerate(parameters):
             offset = 0
-            for match in re.findall(f"#{i}([^0-9]|$)", command, re.MULTILINE):
-                command = command[:match.start()+offset]+p+command[match.end()+offset:]
-                offset += len(p)- (match.end()-match.start())
+            for match in re.findall(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
+                command = (
+                    command[: match.start() + offset]
+                    + p
+                    + command[match.end() + offset :]
+                )
+                offset += len(p) - (match.end() - match.start())
         return command
-
 
     def find_all(self, content: TraceableString) -> typing.Iterable[Replacement]:
         for match in self._command_finder.find_all(str(content)):
             definition = self._commands[str(match.command)]
-            parameters = [content[p[0]:p[1]] for p in match.parameters]
+            parameters = [content[p[0] : p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
             yield Replacement(match.start, match.end, sub)
