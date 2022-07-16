@@ -184,7 +184,13 @@ class CommandFinder:
                 stream.next()
                 return (start, stream.pos())
 
-    def find(self, text: str, begin: int = 0):
+    def find(self, text: str, begin: int = 0) -> typing.Optional[CommandMatch]:
+        """
+        Find first occurrence of a command in the text.
+        :param text: The text to be searched.
+        :param begin: The point to start in the text.
+        :return:
+        """
         stream = LatexStream(text, begin)
         while stream.has_next():
             if stream.peek(True) == "\\":
@@ -203,6 +209,7 @@ class CommandFinder:
                     return CommandMatch(command, begin, end, params, opt_params)
             else:
                 stream.next()
+        return None
 
     def find_all(self, text: str):
         begin = 0
