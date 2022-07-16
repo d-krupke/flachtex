@@ -4,8 +4,7 @@ from flachtex import FileFinder, expand_file
 # For this example, we provide the files as dictionary. You can skip the part with the
 # FileFinder if you are working on your file system.
 document = {
-    "main.tex":
-        r"""
+    "main.tex": r"""
 % This is a test document. We skip the common preamble of LaTeX.
 \section{Main}
 Hello!

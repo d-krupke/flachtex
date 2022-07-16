@@ -7,6 +7,7 @@ class FileSystem:
     Wraps the file system access such that it could be replaced with a simple dict
     to ease testing.
     """
+
     def __contains__(self, item) -> bool:
         return os.path.exists(item) and os.path.isfile(item)
 
@@ -18,17 +19,16 @@ class FileSystem:
 
 
 class FileFinder:
-    def __init__(self, project_root, root_file, file_system=None):
+    def __init__(self, project_root, file_system=None):
         """
         :param project_root: The root of the project (relative to cwd)
-        :param root_file: The path to the root file (relative to cwd)
         :param file_system: A module to open files, can be replaced with a simple dict
             for simple testing.
         """
         if not file_system:
             file_system = FileSystem()
         self.file_system = file_system
-        self._PATH = [project_root, os.path.dirname(root_file)]
+        self._PATH = [project_root]
         self._project_root = project_root
 
     def find_best_matching_path(self, path: str, origin: str) -> str:
@@ -43,8 +43,10 @@ class FileFinder:
         for p in self.get_checked_paths(path, origin):
             if p in self.file_system:
                 return p
-        raise KeyError(f"Not matching file found. "
-                       f"Tried: {', '.join(self.get_checked_paths(path, origin))}")
+        raise KeyError(
+            f"Not matching file found. "
+            f"Tried: {', '.join(self.get_checked_paths(path, origin))}"
+        )
 
     def _normalize(self, path: str):
         return os.path.normpath(path)
@@ -61,19 +63,19 @@ class FileFinder:
         # if it is an absolute path, try this one first
         if os.path.isabs(path):
             yield os.path.normpath(path)
-            yield os.path.normpath(path)+".tex"
+            yield os.path.normpath(path) + ".tex"
         # then try to go relative from the origin file
         d = os.path.dirname(origin)
         yield self._normalize(os.path.join(d, path))
-        yield self._normalize(os.path.join(d, path))+".tex"
+        yield self._normalize(os.path.join(d, path)) + ".tex"
         # then try to use the include directories
         for include in self._PATH:
             yield self._normalize(os.path.join(include, path))
-            yield self._normalize(os.path.join(include, path))+".tex"
+            yield self._normalize(os.path.join(include, path)) + ".tex"
         # finally, in a last attempt, go upwards from the origin file
         while d != self._project_root:  # stop if the root directory has been reached
             yield self._normalize(os.path.join(d, path))
-            yield self._normalize(os.path.join(d, path))+".tex"
+            yield self._normalize(os.path.join(d, path)) + ".tex"
             d = os.path.dirname(d)  # go one directory above
 
     def read(self, path) -> str:

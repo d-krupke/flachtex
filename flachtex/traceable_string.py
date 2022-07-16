@@ -1,4 +1,6 @@
-from flachtex.utils import compute_row_index
+import typing
+
+from .utils import compute_row_index
 
 
 class OriginOfRange:
@@ -45,7 +47,7 @@ class OriginOfRange:
         return shortened
 
     def __lt__(self, other):
-        return self.begin < other.begin
+        return self.begin < other.start
 
     def get_offset(self, i):
         if i not in self:
@@ -60,7 +62,7 @@ class OriginOfRange:
 
 
 class TraceableString:
-    def __init__(self, content: str, origin, offset: int = 0):
+    def __init__(self, content: str, origin: typing.Any, offset: int = 0):
         self.content = content
         self.origins = [OriginOfRange(0, len(content), origin, offset)]
         self._line_index = None
@@ -112,11 +114,15 @@ class TraceableString:
     def to_json(self):
         return {
             "content": self.content,
-            "origins": [{"begin": o.begin,
-                         "end": o.end,
-                         "origin": str(o.origin),
-                         "offset": o.offset}
-                        for o in self.origins]
+            "origins": [
+                {
+                    "begin": o.begin,
+                    "end": o.end,
+                    "origin": str(o.origin),
+                    "offset": o.offset,
+                }
+                for o in self.origins
+            ],
         }
 
     def __add__(self, other):
