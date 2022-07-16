@@ -13,13 +13,13 @@ class Import(Range):
         super().__init__(start, end)
         self.path = path
 
-class IncludeRule(abc.ABC):
+class ImportRule(abc.ABC):
     @abc.abstractmethod
     def find_all(self, content: str) -> typing.Iterable[Import]:
         pass
 
 
-class RegexIncludeRule(IncludeRule):
+class RegexImportRule(ImportRule):
     def __init__(self, regex: str):
         self.regex = re.compile(regex, re.MULTILINE | re.DOTALL)
 
@@ -35,7 +35,7 @@ class RegexIncludeRule(IncludeRule):
 
 
 
-class NativeIncludeRule(RegexIncludeRule):
+class NativeImportRule(RegexImportRule):
     """
     Detects includes of the form `\\input{/path/file.tex}` and `\\include{/path/file.tex}`
     """
@@ -49,7 +49,7 @@ class NativeIncludeRule(RegexIncludeRule):
         return Import(match.start("command"), match.end("command"), import_path)
 
 
-class SubimportRule(RegexIncludeRule):
+class SubimportRule(RegexImportRule):
     """
     Detects imports by the subimport package.
     These can have the form `\\subimport{path}{file}` or  `\\subimport*{path}{file}`.
@@ -70,7 +70,7 @@ class SubimportRule(RegexIncludeRule):
 
 
 # %%FLACHTEX-EXPLICIT-IMPORT[path/file.tex]
-class ExplicitImportRule(RegexIncludeRule):
+class ExplicitImportRule(RegexImportRule):
     def __init__(self):
         super().__init__(
             r"^\s*(?P<command>%%FLACHTEX-EXPLICIT-IMPORT\[(?P<path>[^}]*)\])"
@@ -92,7 +92,7 @@ def _sort_imports(
     return imports
 
 def find_imports(
-    content: TraceableString, include_rules: typing.Iterable[IncludeRule]
+    content: TraceableString, include_rules: typing.Iterable[ImportRule]
 ) -> typing.List[Import]:
     content = str(content)
     imports = []

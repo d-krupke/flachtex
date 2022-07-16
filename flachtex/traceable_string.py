@@ -1,3 +1,5 @@
+import typing
+
 from .utils import compute_row_index
 
 
@@ -60,7 +62,7 @@ class OriginOfRange:
 
 
 class TraceableString:
-    def __init__(self, content: str, origin, offset: int = 0):
+    def __init__(self, content: str, origin: typing.Any, offset: int = 0):
         self.content = content
         self.origins = [OriginOfRange(0, len(content), origin, offset)]
         self._line_index = None

@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="flachtex",
-    version="0.2.5",
+    version="0.3.0",
     description="A traceable LaTeX flattener.",
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -25,7 +25,7 @@ setup(
     packages=["flachtex"],
     install_requires=[],
     entry_points={
-        "console_scripts": ["flachtex=flachtex.cli:main"],
+        "console_scripts": ["flachtex=flachtex.__main__:main"],
     },
     python_requires=">=3.7",
     include_package_data=True,

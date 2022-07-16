@@ -14,7 +14,7 @@ def parse_arguments():
     )
     parser.add_argument("--to_json", action="store_true", help="Return a json.")
     parser.add_argument(
-        "--remove_comments", action="store_true", help="Remove comments."
+        "--comments", action="store_true", help="Remove comments."
     )
     parser.add_argument("--attach", action="store_true", help="Attach sources to json.")
     parser.add_argument(
@@ -27,9 +27,7 @@ def parse_arguments():
         action="store_true",
         help="Use the prefix option in changes.",
     )
-    parser.add_argument(
-        "--remove_todos", action="store_true", help="Remove todo-notes."
-    )
+    parser.add_argument("--todos", action="store_true", help="Remove todo-notes.")
     parser.add_argument(
         "--newcommand",
         action="store_true",
@@ -62,14 +60,14 @@ def main():
     args = parse_arguments()
     file_path = args.path[0]
     preprocessor = Preprocessor(os.path.dirname(file_path))
-    if args.remove_todos:
+    if args.todos:
         preprocessor.skip_rules.append(TodonotesRule())
     if args.changes:
         preprocessor.substitution_rules.append(ChangesRule(args.changes_prefix))
     preprocessor.substitution_rules.append(find_command_definitions(file_path))
     doc = preprocessor.expand_file(file_path)
 
-    if args.remove_comments:
+    if args.comments:
         doc = remove_comments(doc)
     if args.to_json:
         data = doc.to_json()

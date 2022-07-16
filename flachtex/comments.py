@@ -10,6 +10,11 @@ from .traceable_string import TraceableString
 
 
 def remove_comments(content: TraceableString) -> TraceableString:
+    """
+    Remove the comments out of the content.
+    :param content:
+    :return:
+    """
     regex = re.compile(r"^.*?(?<!\\)(?P<comment>%..*\n)", re.MULTILINE)
     comments = []
     for match in regex.finditer(str(content)):
