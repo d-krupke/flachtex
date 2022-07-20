@@ -27,7 +27,7 @@ class NewCommandDefinition:
         :param command: The actual command definition.
         """
         if not isinstance(command, TraceableString):
-            print("WARNING: Command is not traceable!")
+            print("%WARNING: Command is not traceable!")
             command = TraceableString(str(command), None)
         self.name = name
         self.num_parameters = num_parameters
@@ -67,9 +67,13 @@ class NewCommandSubstitution(SubstitutionRule):
     Currently, default parameters are not supported.
     """
 
-    def __init__(self):
+    def __init__(self, space_substitution: bool = True):
+        """
+        :param space_substitution: Try to simulate the missing space of parameterless commands.
+        """
         self._commands = {}
         self._command_finder = CommandFinder()
+        self._space_sub = space_substitution
 
     def new_command(self, definition: NewCommandDefinition) -> None:
         """
@@ -110,9 +114,12 @@ class NewCommandSubstitution(SubstitutionRule):
             parameters = [content[p[0]: p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
             end = match.end
-            if definition.num_parameters == 0:  # space after command is just a separator
-                while content[end] == " ":
-                    end += 1
-                if end != match.end:
-                    sub += TraceableString("{}", None)  # add non-space seperator
+            if self._space_sub and  definition.num_parameters == 0:
+                # The usage of a command like "\\cmd bla" is actually equivalent to
+                # "\\cmd{}bla". This function tries to simulate this.
+                if not str(sub).strip().endswith("\\xspace"):
+                    while content[end] == " ":
+                        end += 1
+                    if end != match.end:
+                        sub += TraceableString("{}", None)  # add non-space seperator
             yield Substitution(match.start, end, sub)

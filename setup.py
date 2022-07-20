@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="flachtex",
-    version="0.3.3",
+    version="0.3.4",
     description="A traceable LaTeX flattener.",
     long_description=readme(),
     long_description_content_type="text/markdown",

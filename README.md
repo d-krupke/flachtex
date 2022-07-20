@@ -235,6 +235,10 @@ could not be imported easily without this feature.
 
 ## Changelog
 
+### 0.3.4
+
+* Dealing with `\xspace` in command substitution.
+
 ### 0.3.3
 
 * `FileFinder` now has a default and allows to set a new root.

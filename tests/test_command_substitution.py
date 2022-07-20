@@ -48,8 +48,14 @@ class CommandSubstitutionTest(unittest.TestCase):
 
     def test2(self):
         sub = NewCommandSubstitution()
-        sub.new_command(NewCommandDefinition("test", 0, "TEST\\xspace"))
+        sub.new_command(NewCommandDefinition(TraceableString("test", None), 0, TraceableString("TEST\\xspace", None)))
         s = apply_substitution_rules(TraceableString("Bla \\test asd \\test{}.", None),
                                      [sub])
-        self.assertEqual(str(s), "Bla TEST\\xspace{}asd TEST\\xspace{}.")
-        print(s)
+        self.assertEqual(str(s), "Bla TEST\\xspace asd TEST\\xspace{}.")
+
+    def test3(self):
+        sub = NewCommandSubstitution()
+        sub.new_command(NewCommandDefinition(TraceableString("test", None), 0, TraceableString("TEST", None)))
+        s = apply_substitution_rules(TraceableString("Bla \\test asd \\test{}.", None),
+                                     [sub])
+        self.assertEqual(str(s), "Bla TEST{}asd TEST{}.")
