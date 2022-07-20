@@ -7,6 +7,7 @@ from flachtex.command_substitution import (
     NewCommandSubstitution,
     NewCommandDefinition,
 )
+from flachtex.rules import apply_substitution_rules
 
 doc1 = TraceableString(
     r"""
@@ -44,3 +45,11 @@ class CommandSubstitutionTest(unittest.TestCase):
             )
         replacements = list(sub.find_all(doc1))
         self.assertEqual(len(replacements), 1)
+
+    def test2(self):
+        sub = NewCommandSubstitution()
+        sub.new_command(NewCommandDefinition("test", 0, "TEST\\xspace"))
+        s = apply_substitution_rules(TraceableString("Bla \\test asd \\test{}.", None),
+                                     [sub])
+        self.assertEqual(str(s), "Bla TEST\\xspace{}asd TEST\\xspace{}.")
+        print(s)

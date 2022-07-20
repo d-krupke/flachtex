@@ -19,7 +19,7 @@ class FileSystem:
 
 
 class FileFinder:
-    def __init__(self, project_root, file_system=None):
+    def __init__(self, project_root=".", file_system=None):
         """
         :param project_root: The root of the project (relative to cwd)
         :param file_system: A module to open files, can be replaced with a simple dict
@@ -30,6 +30,9 @@ class FileFinder:
         self.file_system = file_system
         self._PATH = [project_root]
         self._project_root = project_root
+
+    def set_root(self, project_root: str):
+        self._PATH = [project_root]
 
     def find_best_matching_path(self, path: str, origin: str) -> str:
         """

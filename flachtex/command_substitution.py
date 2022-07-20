@@ -19,13 +19,16 @@ class NewCommandDefinition:
     """
 
     def __init__(
-        self, name: TraceableString, num_parameters: int, command: TraceableString
+            self, name: TraceableString, num_parameters: int, command: TraceableString
     ):
         """
         :param name: The name of the command.
         :param num_parameters: The number of (mandatory parameters).
         :param command: The actual command definition.
         """
+        if not isinstance(command, TraceableString):
+            print("WARNING: Command is not traceable!")
+            command = TraceableString(str(command), None)
         self.name = name
         self.num_parameters = num_parameters
         self.command = command
@@ -35,7 +38,7 @@ class NewCommandDefinition:
 
 
 def find_new_commands(
-    latex_document: TraceableString,
+        latex_document: TraceableString,
 ) -> typing.Iterable[NewCommandDefinition]:
     """
     Find all commands defined by `\newcommand`. Not compatible with optional commands
@@ -46,12 +49,12 @@ def find_new_commands(
     cf = CommandFinder(strict=True)
     cf.add_command("newcommand", 2, 1)
     for match in cf.find_all(str(latex_document)):
-        command_name = latex_document[match.parameters[0][0] : match.parameters[0][1]]
-        command = latex_document[match.parameters[1][0] : match.parameters[1][1]]
+        command_name = latex_document[match.parameters[0][0]: match.parameters[0][1]]
+        command = latex_document[match.parameters[1][0]: match.parameters[1][1]]
         if match.opt_parameters[0]:
             opt_par_range = match.opt_parameters[0]
             num_parameters = int(
-                str(latex_document[opt_par_range[0] : opt_par_range[1]])
+                str(latex_document[opt_par_range[0]: opt_par_range[1]])
             )
         else:
             num_parameters = 0
@@ -87,15 +90,16 @@ class NewCommandSubstitution(SubstitutionRule):
         self._command_finder.add_command(name, definition.num_parameters)
 
     def _get_substitution(
-        self, command: TraceableString, parameters: typing.List[TraceableString]
+            self, command: TraceableString, parameters: typing.List[TraceableString]
     ) -> TraceableString:
         for i, p in enumerate(parameters):
             offset = 0
             for match in re.findall(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
+                print(type(command))
                 command = (
-                    command[: match.start() + offset]
-                    + p
-                    + command[match.end() + offset :]
+                        command[: match.start() + offset]
+                        + p
+                        + command[match.end() + offset:]
                 )
                 offset += len(p) - (match.end() - match.start())
         return command
@@ -103,6 +107,12 @@ class NewCommandSubstitution(SubstitutionRule):
     def find_all(self, content: TraceableString) -> typing.Iterable[Substitution]:
         for match in self._command_finder.find_all(str(content)):
             definition = self._commands[str(match.command)]
-            parameters = [content[p[0] : p[1]] for p in match.parameters]
+            parameters = [content[p[0]: p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
-            yield Substitution(match.start, match.end, sub)
+            end = match.end
+            if definition.num_parameters == 0:  # space after command is just a separator
+                while content[end] == " ":
+                    end += 1
+                if end != match.end:
+                    sub += TraceableString("{}", None)  # add non-space seperator
+            yield Substitution(match.start, end, sub)

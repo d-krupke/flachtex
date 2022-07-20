@@ -233,4 +233,12 @@ tool)
 is that I also saw that some people define their own \input/\include commands, which
 could not be imported easily without this feature.
 
+## Changelog
+
+### 0.3.3
+
+* `FileFinder` now has a default and allows to set a new root.
+* Command substitution for commands without parameters made more accurate.
+* `from_json` for `TraceableString`
+
 **This tool is still work in progress.**

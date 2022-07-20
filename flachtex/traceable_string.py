@@ -4,7 +4,7 @@ from .utils import compute_row_index
 
 
 class OriginOfRange:
-    def __init__(self, begin, end, origin, offset: int = 0):
+    def __init__(self, begin: int, end: int, origin, offset: int = 0):
         self.origin = origin
         self.begin = begin
         self.end = end
@@ -59,6 +59,15 @@ class OriginOfRange:
 
     def move(self, n):
         return OriginOfRange(self.begin + n, self.end + n, self.origin, self.offset)
+
+    def __repr__(self):
+        return f"{self.origin}[{self.begin}:{self.end}:+{self.offset}]"
+
+    def __eq__(self, other):
+        if not isinstance(other, OriginOfRange):
+            return False
+        return other.begin==self.begin and self.end == other.end\
+               and self.origin == other.origin and self.offset == other.offset
 
 
 class TraceableString:
@@ -125,7 +134,32 @@ class TraceableString:
             ],
         }
 
+    @staticmethod
+    def from_json(data) -> "TraceableString":
+        """
+        Load a traceable string from a json.
+        :param data: JSON as dictionary
+        :return: The traceable string.
+        """
+        try:
+            ts = TraceableString(data["content"], None)
+            ts.origins = [OriginOfRange(int(o["begin"]), int(o["end"]),
+                                        o["origin"], int(o["offset"]))
+                          for o in data["origins"]]
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"Data not compatible: {e}")
+        return ts
+
+
     def __add__(self, other):
         ts = TraceableString(self.content + other.content, None)
         ts.origins = self.origins + [o.move(len(self)) for o in other.origins]
         return ts
+
+    def __eq__(self, other):
+        if not isinstance(other, TraceableString):
+            return False
+        return self.content == other.content and self.origins == other.origins
+
+    def __repr__(self):
+        return f"TraceableString({self.content}, {self.origins})"
