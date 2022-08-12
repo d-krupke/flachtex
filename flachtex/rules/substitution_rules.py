@@ -3,6 +3,7 @@ Some parts of the LaTeX-document may need to be substituted.
 The rules defined in this file allow such a handling.
 """
 import abc
+import logging
 import typing
 
 from flachtex.command_finder import CommandFinder
@@ -113,5 +114,5 @@ def apply_substitution_rules(
         max_itererations -= 1
         replacements = _find_substitutions(content, replacement_rules)
     if max_itererations == 0:
-        print("%WARNING: Exceeded maximal replacement iterations.")
+        logging.getLogger("flachtex").warning("Exceeded maximal replacement iterations.")
     return content

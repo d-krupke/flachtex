@@ -3,7 +3,7 @@ LaTeX allows you to define your own commands using `\newcommand`.
 This can be a useful feature for many scenarios, but it complicates the source.
 Thus, this file implements some logic to substitute these usages by their definition.
 """
-
+import logging
 import re
 import typing
 
@@ -27,7 +27,7 @@ class NewCommandDefinition:
         :param command: The actual command definition.
         """
         if not isinstance(command, TraceableString):
-            print("%WARNING: Command is not traceable!")
+            logging.getLogger("flachtex").warning("Command is not traceable!")
             command = TraceableString(str(command), None)
         self.name = name
         self.num_parameters = num_parameters
@@ -85,12 +85,11 @@ class NewCommandSubstitution(SubstitutionRule):
         if name[0] == "\\":
             name = name[1:]
         if name in self._commands:
-            print(
-                f"%WARNING: Multiple definitions of command '{name}'."
-                f" Substitution may be buggy."
+            logging.getLogger("flachtex").warning(
+                f"Multiple definitions of command '{name}'. Substitution may be buggy."
             )
         self._commands[name] = definition
-        print("%LOG: Detected", definition)
+        logging.getLogger("flachtex").info(f"Detected {definition}")
         self._command_finder.add_command(name, definition.num_parameters)
 
     def _get_substitution(
@@ -99,7 +98,6 @@ class NewCommandSubstitution(SubstitutionRule):
         for i, p in enumerate(parameters):
             offset = 0
             for match in re.findall(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
-                print(type(command))
                 command = (
                         command[: match.start() + offset]
                         + p

@@ -5,7 +5,7 @@ could not be tricked.
 The following code can still be tricked by implicit parameters (no brackets {}),
 but otherwise should be safe.
 """
-
+import logging
 import typing
 
 
@@ -98,12 +98,12 @@ class CommandMatch:
     """
 
     def __init__(
-        self,
-        command: str,
-        start: int,
-        end: int,
-        parameters: typing.List[typing.Tuple[int, int]],
-        opt_parameters: typing.List[typing.Optional[typing.Tuple[int, int]]],
+            self,
+            command: str,
+            start: int,
+            end: int,
+            parameters: typing.List[typing.Tuple[int, int]],
+            opt_parameters: typing.List[typing.Optional[typing.Tuple[int, int]]],
     ):
         self.command = command  # command name
         self.start = start  # position of the start of the command
@@ -113,27 +113,36 @@ class CommandMatch:
 
     def __repr__(self):
         return (
-            f"{self.start}:{self.end} \\{self.command}"
-            + "["
-            + "".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)
-            + "]"
-            + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
+                f"{self.start}:{self.end} \\{self.command}"
+                + "["
+                + "".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)
+                + "]"
+                + "".join(
+            "{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
         )
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return (
-            self.command,
-            self.start,
-            self.end,
-            self.parameters,
-            self.opt_parameters,
-        ) == (
-            other.command,
-            other.start,
-            other.end,
-            other.parameters,
-            other.opt_parameters,
-        )
+                   self.command,
+                   self.start,
+                   self.end,
+                   self.parameters,
+                   self.opt_parameters,
+               ) == (
+                   other.command,
+                   other.start,
+                   other.end,
+                   other.parameters,
+                   other.opt_parameters,
+               )
+
+
+class _ParserError(ValueError):
+    def __init__(self, msg, position):
+        super().__init__(msg)
+        self.position = position
 
 
 class CommandFinder:
@@ -169,7 +178,8 @@ class CommandFinder:
     def _read_command_name(self, stream):
         stream.skip_whitespace_and_comments()
         if not stream.peek(True) == "\\":
-            raise ValueError(f"No command. Next character is '{stream.peek()}'.")
+            raise _ParserError(f"No command. Next character is '{stream.peek()}'.",
+                               stream.pos())
         command = ""
         stream.next()  # skip '\'
         while stream.peek().isalpha():
@@ -177,7 +187,7 @@ class CommandFinder:
         return command
 
     def _read_parameter(
-        self, stream: LatexStream, begin: str, end: str, mandatory=True
+            self, stream: LatexStream, begin: str, end: str, mandatory=True
     ):
         stream.skip_whitespace_and_comments()
         if not mandatory and stream.peek(True) != begin:
@@ -196,11 +206,15 @@ class CommandFinder:
             return (start, stream.pos() - 1)  # at }]
         else:  # parameter without begin/end-symbols ([],{})
             if self._strict:
-                print(stream._text[stream.pos() - 10 : stream.pos() + 10])
-                raise ValueError("Parameters without brackets.")
+                context = stream._text[stream.pos() - 10: stream.pos() + 10]
+                raise _ParserError(f"Parameters without brackets ('{context}').",
+                                   stream.pos())
             start = stream.pos()
             if stream.peek() == "\\":
-                print("WARNING: Ambiguous parameters due to missing brackets.")
+                context = stream._text[stream.pos() - 10: stream.pos() + 10]
+                logging.getLogger("flachtex").warning(
+                    f"Ambiguous parameters due to missing brackets ('{context}')."
+                    f" This can lead to corruptions.")
                 command_name = self._read_command_name(stream)
                 self._read_parameters(stream, command_name)
                 return (start, stream.pos())
@@ -223,23 +237,28 @@ class CommandFinder:
         """
         stream = LatexStream(text, begin)
         while stream.has_next():
-            if stream.peek(True) == "\\":
-                begin = stream.pos()
-                command = self._read_command_name(stream)
-                if command in ("newcommand", "renewcommand"):
-                    if command in self._commands:
-                        opt_params, params = self._read_new_command_parameters(stream)
+            try:
+                if stream.peek(True) == "\\":
+                    begin = stream.pos()
+                    command = self._read_command_name(stream)
+                    if command in ("newcommand", "renewcommand"):
+                        if command in self._commands:
+                            opt_params, params = self._read_new_command_parameters(stream)
+                            end = stream.pos()
+                            return CommandMatch(command, begin, end, params, opt_params)
+                        else:
+                            #  In the \\newcommand definition, the commands are not actually
+                            # applied, so we want to skip them.
+                            self._read_parameter(stream, "{", "}")  # skip definition name
+                    elif command in self._commands:
+                        opt_params, params = self._read_parameters(stream, command)
                         end = stream.pos()
                         return CommandMatch(command, begin, end, params, opt_params)
-                    else:
-                        #  In the \\newcommand definition, the commands are not actually
-                        # applied, so we want to skip them.
-                        self._read_parameter(stream, "{", "}")  # skip definition name
-                elif command in self._commands:
-                    opt_params, params = self._read_parameters(stream, command)
-                    end = stream.pos()
-                    return CommandMatch(command, begin, end, params, opt_params)
-            else:
+
+                else:
+                    stream.next()
+            except _ParserError as pe:
+                logging.getLogger("flachtex").error(str(pe))
                 stream.next()
         return None
 

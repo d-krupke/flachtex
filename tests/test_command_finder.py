@@ -50,3 +50,9 @@ class CommandFinderTest(unittest.TestCase):
         cf.add_command("todo", 1)
         text = "This is a \\todo{bla%}\nbla} simple string\n bla"
         self.assertEqual(cf.find(text), CommandMatch("todo", 10, 26, [(16, 25)], []))
+
+    def test_bad(self):
+        cf = CommandFinder(strict=True)
+        cf.add_command("renewcommand", 2)
+        text = "This is a simple string\n bla \\renewcommand\\thesubfigure{(\\alph{subfigure})} asdas"
+        self.assertEqual(cf.find(text), None)
