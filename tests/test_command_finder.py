@@ -39,6 +39,14 @@ class CommandFinderTest(unittest.TestCase):
             cf.find(text), CommandMatch("todo", 10, 20, [(16, 19)], [None])
         )
 
+    def test_hash_param(self):
+        cf = CommandFinder()
+        cf.add_command("todo", 1, 1)
+        text = "This is a \\todo{bla#1} simple string\n bla"
+        self.assertEqual(
+            cf.find(text), CommandMatch("todo", 10, 22, [(16, 21)], [None])
+        )
+
     def test_newline(self):
         cf = CommandFinder()
         cf.add_command("todo", 1)

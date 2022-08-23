@@ -97,7 +97,7 @@ class NewCommandSubstitution(SubstitutionRule):
     ) -> TraceableString:
         for i, p in enumerate(parameters):
             offset = 0
-            for match in re.findall(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
+            for match in re.finditer(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
                 command = (
                         command[: match.start() + offset]
                         + p

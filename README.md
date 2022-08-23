@@ -235,6 +235,10 @@ could not be imported easily without this feature.
 
 ## Changelog
 
+### 0.3.5
+
+* bugfix: Using  findall instead of finditer.
+
 ### 0.3.4
 
 * Dealing with `\xspace` in command substitution.
