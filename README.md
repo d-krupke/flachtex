@@ -235,18 +235,12 @@ could not be imported easily without this feature.
 
 ## Changelog
 
-### 0.3.5
-
-* bugfix: Using  findall instead of finditer.
-
-### 0.3.4
-
-* Dealing with `\xspace` in command substitution.
-
-### 0.3.3
-
-* `FileFinder` now has a default and allows to set a new root.
-* Command substitution for commands without parameters made more accurate.
-* `from_json` for `TraceableString`
+* **0.3.7**: Versions got slightly mixed up. Should be fixed now.
+* **0.3.6** bugfix: Using  findall instead of finditer.
+* **0.3.4** Dealing with `\xspace` in command substitution.
+* **0.3.3**
+  * `FileFinder` now has a default and allows to set a new root.
+  * Command substitution for commands without parameters made more accurate.
+  * `from_json` for `TraceableString`
 
 **This tool is still work in progress.**
