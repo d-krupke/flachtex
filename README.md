@@ -235,6 +235,7 @@ could not be imported easily without this feature.
 
 ## Changelog
 
+* **0.3.8**: Substituting newcommands is no longer enabled by default.
 * **0.3.7**: Versions got slightly mixed up. Should be fixed now.
 * **0.3.6** bugfix: Using  findall instead of finditer.
 * **0.3.4** Dealing with `\xspace` in command substitution.

@@ -64,7 +64,8 @@ def main():
         preprocessor.skip_rules.append(TodonotesRule())
     if args.changes:
         preprocessor.substitution_rules.append(ChangesRule(args.changes_prefix))
-    preprocessor.substitution_rules.append(find_command_definitions(file_path))
+    if args.newcommand:
+        preprocessor.substitution_rules.append(find_command_definitions(file_path))
     doc = preprocessor.expand_file(file_path)
 
     if args.comments:
