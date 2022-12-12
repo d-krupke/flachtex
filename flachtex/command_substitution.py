@@ -48,6 +48,9 @@ def find_new_commands(
     """
     cf = CommandFinder(strict=True)
     cf.add_command("newcommand", 2, 1)
+    cf.add_command("newcommand*", 2, 1)
+    cf.add_command("renewcommand", 2, 1)
+    cf.add_command("renewcommand*", 2, 1)
     for match in cf.find_all(str(latex_document)):
         command_name = latex_document[match.parameters[0][0]: match.parameters[0][1]]
         command = latex_document[match.parameters[1][0]: match.parameters[1][1]]

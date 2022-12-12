@@ -17,12 +17,12 @@ doc1 = TraceableString(
 
 \newcommand{\MIPone}{MIP-1\xspace}
 \newcommand{\MIPtwo}{MIP-2\xspace}
-\newcommand{\MIPthree}{MIP-3\xspace}
+\newcommand*{\MIPthree}{MIP-3\xspace}
 \newcommand{\CPone}{CP-1\xspace}
 \newcommand{\CPtwo}{CP-2\xspace}
 
 \newcommand{\cone}{cone\xspace}\newcommand{\cupdot}{\mathbin{\mathaccent\cdot\cup}}
-\newcommand{\mincover}{$\Lambda$-cover\xspace}
+\newcommand*{\mincover}{$\Lambda$-cover\xspace}
 
 \MIPone
 """,

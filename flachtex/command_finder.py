@@ -182,7 +182,7 @@ class CommandFinder:
                                stream.pos())
         command = ""
         stream.next()  # skip '\'
-        while stream.peek().isalpha():
+        while stream.peek().isalpha() or stream.peek()=="*":
             command += stream.next()
         return command
 
@@ -241,7 +241,7 @@ class CommandFinder:
                 if stream.peek(True) == "\\":
                     begin = stream.pos()
                     command = self._read_command_name(stream)
-                    if command in ("newcommand", "renewcommand"):
+                    if command in ("newcommand", "renewcommand", "newcommand*", "renewcommand*"):
                         if command in self._commands:
                             opt_params, params = self._read_new_command_parameters(stream)
                             end = stream.pos()

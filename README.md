@@ -235,6 +235,7 @@ could not be imported easily without this feature.
 
 ## Changelog
 
+* **0.3.10** Support for `newcommand*` substitution
 * **0.3.9**: PEP compliance which may have created problems in environments without setuptools
 * **0.3.8**: Substituting newcommands is no longer enabled by default.
 * **0.3.7**: Versions got slightly mixed up. Should be fixed now.
