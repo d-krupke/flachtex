@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def readme():
@@ -22,7 +22,8 @@ setup(
     author="Dominik Krupke",
     author_email="krupke@ibr.cs.tu-bs.de",
     license="MIT",
-    packages=["flachtex", "flachtex.rules"],
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     install_requires=[],
     entry_points={
         "console_scripts": ["flachtex=flachtex.__main__:main"],
