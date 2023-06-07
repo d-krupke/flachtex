@@ -48,7 +48,7 @@ class TestRowIndex(unittest.TestCase):
         for i in text.split("\n"):
             b = text.find(i)
             if i:
-                self.assertEqual(index[int(i)], b)
+                assert index[int(i)] == b
         print(index)
 
     def test_2(self):
@@ -57,5 +57,5 @@ class TestRowIndex(unittest.TestCase):
         for i in text.split("\n"):
             b = text.find(i)
             if i:
-                self.assertEqual(index[int(i)], b)
+                assert index[int(i)] == b
         print(index)

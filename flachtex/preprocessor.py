@@ -1,11 +1,15 @@
 import typing
 
 from flachtex.cycle_prevention import CyclePrevention
-
 from flachtex.filefinder import FileFinder
-from flachtex.rules import apply_skip_rules, apply_substitution_rules, find_imports, \
-    Import, BASIC_SKIP_RULES, BASIC_INCLUDE_RULES
-
+from flachtex.rules import (
+    BASIC_INCLUDE_RULES,
+    BASIC_SKIP_RULES,
+    Import,
+    apply_skip_rules,
+    apply_substitution_rules,
+    find_imports,
+)
 from flachtex.traceable_string import TraceableString
 
 
@@ -42,13 +46,14 @@ class Preprocessor:
         return imports
 
     def _add_structure(self, path: str, included_files: typing.List[str]):
-        self.structure[path] = {"content": self.file_finder.read(path),
-                                "includes": included_files}
+        self.structure[path] = {
+            "content": self.file_finder.read(path),
+            "includes": included_files,
+        }
 
-    def expand_file(self,
-                    file_path: str,
-                    _cycle_prevention: typing.Optional[CyclePrevention] = None) \
-            -> TraceableString:
+    def expand_file(
+        self, file_path: str, _cycle_prevention: typing.Optional[CyclePrevention] = None
+    ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an
         excpetion in case of cyclic include-commands.
@@ -56,7 +61,9 @@ class Preprocessor:
         :param _cycle_prevention: Internal use for preventing cyclic inclusions.
         :return: A flat LaTeX-document containing all included files.
         """
-        _cycle_prevention = _cycle_prevention if _cycle_prevention else CyclePrevention()
+        _cycle_prevention = (
+            _cycle_prevention if _cycle_prevention else CyclePrevention()
+        )
         offset = 0
         _cycle_prevention.push(file_path, context=file_path)
         content = self.read_file(file_path)
@@ -67,9 +74,11 @@ class Preprocessor:
                 match.path, origin=file_path
             )
             insertion = self.expand_file(insertion_file, _cycle_prevention)
-            content = (content[:match.start + offset]
-                       + insertion
-                       + content[match.end + offset:])
+            content = (
+                content[: match.start + offset]
+                + insertion
+                + content[match.end + offset :]
+            )
             offset += len(insertion) - len(match)
         _cycle_prevention.pop()
         return content

@@ -7,9 +7,9 @@ import logging
 import re
 import typing
 
-from flachtex.traceable_string import TraceableString
 from flachtex.command_finder import CommandFinder
-from flachtex.rules import SubstitutionRule, Substitution
+from flachtex.rules import Substitution, SubstitutionRule
+from flachtex.traceable_string import TraceableString
 
 
 class NewCommandDefinition:
@@ -19,7 +19,7 @@ class NewCommandDefinition:
     """
 
     def __init__(
-            self, name: TraceableString, num_parameters: int, command: TraceableString
+        self, name: TraceableString, num_parameters: int, command: TraceableString
     ):
         """
         :param name: The name of the command.
@@ -38,7 +38,7 @@ class NewCommandDefinition:
 
 
 def find_new_commands(
-        latex_document: TraceableString,
+    latex_document: TraceableString,
 ) -> typing.Iterable[NewCommandDefinition]:
     """
     Find all commands defined by `\newcommand`. Not compatible with optional commands
@@ -52,12 +52,12 @@ def find_new_commands(
     cf.add_command("renewcommand", 2, 1)
     cf.add_command("renewcommand*", 2, 1)
     for match in cf.find_all(str(latex_document)):
-        command_name = latex_document[match.parameters[0][0]: match.parameters[0][1]]
-        command = latex_document[match.parameters[1][0]: match.parameters[1][1]]
+        command_name = latex_document[match.parameters[0][0] : match.parameters[0][1]]
+        command = latex_document[match.parameters[1][0] : match.parameters[1][1]]
         if match.opt_parameters[0]:
             opt_par_range = match.opt_parameters[0]
             num_parameters = int(
-                str(latex_document[opt_par_range[0]: opt_par_range[1]])
+                str(latex_document[opt_par_range[0] : opt_par_range[1]])
             )
         else:
             num_parameters = 0
@@ -96,31 +96,30 @@ class NewCommandSubstitution(SubstitutionRule):
         self._command_finder.add_command(name, definition.num_parameters)
 
     def _get_substitution(
-            self, command: TraceableString, parameters: typing.List[TraceableString]
+        self, command: TraceableString, parameters: typing.List[TraceableString]
     ) -> TraceableString:
-        print("Parameters:",  [str(p) for  p in parameters])
         for i, p in enumerate(parameters):
-            i+=1
+            i += 1
             offset = 0
-            for match in re.finditer(f"(?P<arg>#{i})([^0-9]|$)", str(command), re.MULTILINE):
-                l = (match.end("arg") - match.start("arg"))-1
-                print("ARG", i,  command, p, str(match))
+            for match in re.finditer(
+                f"(?P<arg>#{i})([^0-9])", str(command) + " ", re.MULTILINE
+            ):
+                l = (match.end("arg") - match.start("arg")) - 1
                 command = (
-                        command[: match.start("arg") + offset]
-                        + p
-                        + command[(match.end("arg")) + offset:]
+                    command[: match.start("arg") + offset]
+                    + p
+                    + command[(match.end("arg")) + offset :]
                 )
-                print(command)
                 offset += len(p) - l
         return command
 
     def find_all(self, content: TraceableString) -> typing.Iterable[Substitution]:
         for match in self._command_finder.find_all(str(content)):
             definition = self._commands[str(match.command)]
-            parameters = [content[p[0]: p[1]] for p in match.parameters]
+            parameters = [content[p[0] : p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
             end = match.end
-            if self._space_sub and  definition.num_parameters == 0:
+            if self._space_sub and definition.num_parameters == 0:
                 # The usage of a command like "\\cmd bla" is actually equivalent to
                 # "\\cmd{}bla". This function tries to simulate this.
                 if not str(sub).strip().endswith("\\xspace"):

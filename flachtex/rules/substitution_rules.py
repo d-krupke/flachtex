@@ -8,13 +8,12 @@ import typing
 
 from flachtex.command_finder import CommandFinder
 from flachtex.traceable_string import TraceableString
-
 from flachtex.utils import Range
 
 
 class Substitution(Range):
     def __init__(
-            self, start: int, end: int, replacement_text: typing.Optional[TraceableString]
+        self, start: int, end: int, replacement_text: typing.Optional[TraceableString]
     ):
         super().__init__(start, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
@@ -58,14 +57,14 @@ class ChangesRule(SubstitutionRule):
                 yield Substitution(
                     match.start,
                     match.end,
-                    content[match.parameters[0][0]: match.parameters[0][1]],
+                    content[match.parameters[0][0] : match.parameters[0][1]],
                 )
             elif match.command in (self._deleted, self._comment):
                 yield Substitution(match.start, match.end, None)
 
 
 def _sort_replacements(
-        replacements: typing.List[Substitution]
+    replacements: typing.List[Substitution],
 ) -> typing.Iterable[Substitution]:
     replacements.sort()
     if len(replacements) <= 1:
@@ -80,17 +79,17 @@ def _sort_replacements(
 
 
 def _find_substitutions(
-        content: TraceableString, replacement_rules: typing.List[SubstitutionRule]
+    content: TraceableString, replacement_rules: typing.List[SubstitutionRule]
 ) -> typing.List[Substitution]:
     replacements = []
     for rule in replacement_rules:
-        replacements += [match for match in rule.find_all(content)]
+        replacements += list(rule.find_all(content))
     return replacements
 
 
 def apply_substitution_rules(
-        content: TraceableString,
-        replacement_rules: typing.List[SubstitutionRule],
+    content: TraceableString,
+    replacement_rules: typing.List[SubstitutionRule],
 ):
     replacements = _find_substitutions(content, replacement_rules)
     max_itererations = 10
@@ -100,19 +99,21 @@ def apply_substitution_rules(
         for replacement in replacements:
             if replacement.replacement_text:
                 content = (
-                        content[: replacement.start + offset]
-                        + replacement.replacement_text
-                        + content[replacement.end + offset:]
+                    content[: replacement.start + offset]
+                    + replacement.replacement_text
+                    + content[replacement.end + offset :]
                 )
                 offset -= len(replacement) - len(replacement.replacement_text)
             else:
                 content = (
-                        content[: replacement.start + offset]
-                        + content[replacement.end + offset:]
+                    content[: replacement.start + offset]
+                    + content[replacement.end + offset :]
                 )
                 offset -= len(replacement)
         max_itererations -= 1
         replacements = _find_substitutions(content, replacement_rules)
     if max_itererations == 0:
-        logging.getLogger("flachtex").warning("Exceeded maximal replacement iterations.")
+        logging.getLogger("flachtex").warning(
+            "Exceeded maximal replacement iterations."
+        )
     return content

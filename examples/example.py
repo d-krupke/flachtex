@@ -1,5 +1,5 @@
-from flachtex.comments import remove_comments
 from flachtex import FileFinder, expand_file
+from flachtex.comments import remove_comments
 
 # For this example, we provide the files as dictionary. You can skip the part with the
 # FileFinder if you are working on your file system.

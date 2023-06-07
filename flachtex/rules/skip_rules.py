@@ -3,12 +3,12 @@ Some parts should be skipped for the flattening. Here you can specify correponsi
 rules.
 """
 
-import typing
 import abc
 import re
+import typing
 
-from ..traceable_string import TraceableString
 from ..command_finder import CommandFinder
+from ..traceable_string import TraceableString
 from ..utils import Range
 
 
@@ -73,7 +73,7 @@ def _find_skips(content, skip_rules):
     content = str(content)
     skips = []
     for rule in skip_rules:
-        skips += [match for match in rule.find_all(content)]
+        skips += list(rule.find_all(content))
     return skips
 
 
@@ -81,12 +81,14 @@ def _sort_and_check_ranges(skips) -> typing.Iterable[Range]:
     skips.sort()
     for i, e in enumerate(skips[:-1]):
         if e.intersects(skips[i + 1]):
-            raise ValueError(f"Intersecting skipped parts.")
+            msg = "Intersecting skipped parts."
+            raise ValueError(msg)
     return skips
 
 
-def apply_skip_rules(content: TraceableString,
-                     skip_rules: typing.Iterable[SkipRule]) -> TraceableString:
+def apply_skip_rules(
+    content: TraceableString, skip_rules: typing.Iterable[SkipRule]
+) -> TraceableString:
     """
     Apply a list of SkipRules to a content and return the content removed of all
     parts specified by the rules.
@@ -98,6 +100,6 @@ def apply_skip_rules(content: TraceableString,
     sorted_skips = _sort_and_check_ranges(skips)
     offset = 0
     for skip in sorted_skips:
-        content = content[: skip.start + offset] + content[skip.end + offset:]
+        content = content[: skip.start + offset] + content[skip.end + offset :]
         offset -= len(skip)
     return content

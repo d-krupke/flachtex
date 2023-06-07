@@ -17,14 +17,14 @@ class OriginTest(unittest.TestCase):
         }
         flat, sources = self.flatten(test_document)
         for path, source in test_document.items():
-            self.assertEqual(source, sources[path]["content"])
-        self.assertEqual(flat.get_origin_of_line(0, 0), ("main.tex", 0))
-        self.assertEqual(flat.get_origin(0), ("main.tex", 0))
-        self.assertEqual(flat.get_origin_of_line(0, 4), ("main.tex", 4))
-        self.assertEqual(flat.get_origin(4), ("main.tex", 4))
-        self.assertEqual(flat.get_origin_of_line(1, 0), ("main.tex", 7))
-        self.assertEqual(flat.get_origin_of_line(2, 4), ("main.tex", 18))
-        self.assertEqual(flat.get_origin(17), ("main.tex", 17))
+            assert source == sources[path]["content"]
+        assert flat.get_origin_of_line(0, 0) == ("main.tex", 0)
+        assert flat.get_origin(0) == ("main.tex", 0)
+        assert flat.get_origin_of_line(0, 4) == ("main.tex", 4)
+        assert flat.get_origin(4) == ("main.tex", 4)
+        assert flat.get_origin_of_line(1, 0) == ("main.tex", 7)
+        assert flat.get_origin_of_line(2, 4) == ("main.tex", 18)
+        assert flat.get_origin(17) == ("main.tex", 17)
 
     def test_single_import(self):
         test_document = {
@@ -33,10 +33,10 @@ class OriginTest(unittest.TestCase):
         }
         flat, sources = self.flatten(test_document)
         for path, source in test_document.items():
-            self.assertEqual(source, sources[path]["content"])
-        self.assertEqual(flat.get_origin_of_line(0, 0), ("main.tex", 0))
-        self.assertEqual(flat.get_origin(0), ("main.tex", 0))
-        self.assertEqual(flat.get_origin_of_line(0, 4), ("main.tex", 4))
-        self.assertEqual(flat.get_origin(4), ("main.tex", 4))
-        self.assertEqual(flat.get_origin_of_line(2, 4), ("sub.tex", 4))
-        self.assertEqual(flat.get_origin(17), ("sub.tex", 3))
+            assert source == sources[path]["content"]
+        assert flat.get_origin_of_line(0, 0) == ("main.tex", 0)
+        assert flat.get_origin(0) == ("main.tex", 0)
+        assert flat.get_origin_of_line(0, 4) == ("main.tex", 4)
+        assert flat.get_origin(4) == ("main.tex", 4)
+        assert flat.get_origin_of_line(2, 4) == ("sub.tex", 4)
+        assert flat.get_origin(17) == ("sub.tex", 3)

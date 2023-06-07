@@ -12,9 +12,10 @@ class FileSystem:
         return os.path.exists(item) and os.path.isfile(item)
 
     def __getitem__(self, item) -> str:
-        if not item in self:
-            raise KeyError(f"Could not find {item}.")
-        with open(item, "r") as f:
+        if item not in self:
+            msg = f"Could not find {item}."
+            raise KeyError(msg)
+        with open(item) as f:
             return "".join(f.readlines())
 
 
@@ -46,10 +47,8 @@ class FileFinder:
         for p in self.get_checked_paths(path, origin):
             if p in self.file_system:
                 return p
-        raise KeyError(
-            f"Not matching file found. "
-            f"Tried: {', '.join(self.get_checked_paths(path, origin))}"
-        )
+        msg = f"Not matching file found. Tried: {', '.join(self.get_checked_paths(path, origin))}"
+        raise KeyError(msg)
 
     def _normalize(self, path: str):
         return os.path.normpath(path)

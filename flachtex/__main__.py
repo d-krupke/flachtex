@@ -1,11 +1,11 @@
-import os
-import json
 import argparse
+import json
+import os
 
-from .preprocessor import Preprocessor
-from .command_substitution import find_new_commands, NewCommandSubstitution
-from .rules import ChangesRule, TodonotesRule
+from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
+from .preprocessor import Preprocessor
+from .rules import ChangesRule, TodonotesRule
 
 
 def parse_arguments():
@@ -13,9 +13,7 @@ def parse_arguments():
         description="flachtex: Traceable LaTeX flattening."
     )
     parser.add_argument("--to_json", action="store_true", help="Return a json.")
-    parser.add_argument(
-        "--comments", action="store_true", help="Remove comments."
-    )
+    parser.add_argument("--comments", action="store_true", help="Remove comments.")
     parser.add_argument("--attach", action="store_true", help="Attach sources to json.")
     parser.add_argument(
         "--changes",

@@ -51,7 +51,8 @@ class OriginOfRange:
 
     def get_offset(self, i):
         if i not in self:
-            raise ValueError("Index is not within this origin range.")
+            msg = "Index is not within this origin range."
+            raise ValueError(msg)
         return self.offset + (i - self.begin)
 
     def __contains__(self, item):
@@ -66,8 +67,12 @@ class OriginOfRange:
     def __eq__(self, other):
         if not isinstance(other, OriginOfRange):
             return False
-        return other.begin==self.begin and self.end == other.end\
-               and self.origin == other.origin and self.offset == other.offset
+        return (
+            other.begin == self.begin
+            and self.end == other.end
+            and self.origin == other.origin
+            and self.offset == other.offset
+        )
 
 
 class TraceableString:
@@ -90,7 +95,8 @@ class TraceableString:
         if stop > len(self):
             raise IndexError()
         if s.step is not None and s.step != 1:
-            raise NotImplementedError("Slicing with steps is not supported.")
+            msg = "Slicing with steps is not supported."
+            raise NotImplementedError(msg)
         return start, stop
 
     def __getitem__(self, item):
@@ -110,6 +116,7 @@ class TraceableString:
         for o in self.origins:
             if i in o:
                 return o.origin, o.get_offset(i)
+        return None
 
     def _populate_line_index(self):
         self._line_index = compute_row_index(self.content)
@@ -143,13 +150,16 @@ class TraceableString:
         """
         try:
             ts = TraceableString(data["content"], None)
-            ts.origins = [OriginOfRange(int(o["begin"]), int(o["end"]),
-                                        o["origin"], int(o["offset"]))
-                          for o in data["origins"]]
+            ts.origins = [
+                OriginOfRange(
+                    int(o["begin"]), int(o["end"]), o["origin"], int(o["offset"])
+                )
+                for o in data["origins"]
+            ]
         except (KeyError, TypeError) as e:
-            raise ValueError(f"Data not compatible: {e}")
+            msg = f"Data not compatible: {e}"
+            raise ValueError(msg)
         return ts
-
 
     def __add__(self, other):
         ts = TraceableString(self.content + other.content, None)
