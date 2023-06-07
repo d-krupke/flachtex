@@ -98,15 +98,20 @@ class NewCommandSubstitution(SubstitutionRule):
     def _get_substitution(
             self, command: TraceableString, parameters: typing.List[TraceableString]
     ) -> TraceableString:
+        print("Parameters:",  [str(p) for  p in parameters])
         for i, p in enumerate(parameters):
+            i+=1
             offset = 0
-            for match in re.finditer(f"#{i}([^0-9]|$)", str(command), re.MULTILINE):
+            for match in re.finditer(f"(?P<arg>#{i})([^0-9]|$)", str(command), re.MULTILINE):
+                l = (match.end("arg") - match.start("arg"))-1
+                print("ARG", i,  command, p, str(match))
                 command = (
-                        command[: match.start() + offset]
+                        command[: match.start("arg") + offset]
                         + p
-                        + command[match.end() + offset:]
+                        + command[(match.end("arg")) + offset:]
                 )
-                offset += len(p) - (match.end() - match.start())
+                print(command)
+                offset += len(p) - l
         return command
 
     def find_all(self, content: TraceableString) -> typing.Iterable[Substitution]:

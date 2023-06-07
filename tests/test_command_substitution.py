@@ -30,6 +30,8 @@ doc1 = TraceableString(
 )
 
 
+
+
 class CommandSubstitutionTest(unittest.TestCase):
     def test_empty(self):
         cmds = list(find_new_commands(TraceableString("", "Main.tex")))
@@ -59,3 +61,29 @@ class CommandSubstitutionTest(unittest.TestCase):
         s = apply_substitution_rules(TraceableString("Bla \\test asd \\test{}.", None),
                                      [sub])
         self.assertEqual(str(s), "Bla TEST{}asd TEST{}.")
+
+    def test4(self):
+        doc2 = TraceableString(r"""
+\newcommand{\test}[2]{#2-#1}
+\newcommand{\test1}[2]{#2-#1.}
+\newcommand{\test2}[2]{#2#1.}
+\begin{document}
+\test{a}{b}.\\
+\test1{a}{b}.\\
+\test2{a}{b}.
+\end{document}
+""", "main.tex")
+        cmds = list(find_new_commands(doc2))
+        self.assertEqual(len(cmds), 3)
+        sub = NewCommandSubstitution()
+        for cmd in cmds:
+            sub.new_command(
+                NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command)
+            )
+        replacements = list(sub.find_all(doc2))
+        self.assertEqual(len(replacements), 3)
+        s = apply_substitution_rules(doc2, [sub])
+        print(s)
+
+
+
