@@ -1,5 +1,6 @@
 import os.path
 import typing
+from pathlib import Path
 
 
 class FileSystem:
@@ -15,8 +16,11 @@ class FileSystem:
         if item not in self:
             msg = f"Could not find {item}."
             raise KeyError(msg)
-        with open(item) as f:
-            return "".join(f.readlines())
+        with Path(item).open(errors="ignore") as f:
+            try:
+                return str(f.read())
+            except Exception as e:
+                return f"\n%ERROR (flachtex): Could not read '{item}': '{e}'\n"
 
 
 class FileFinder:

@@ -241,8 +241,11 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
-- **0.3.12** improves robustness of command parsing (of potentially faulty LaTeX
+- **0.3.13** improves robustness of command parsing (of potentially faulty LaTeX
   code)
+- **0.3.12** Made parsing of non utf-8 encodings more robust. Some templates you
+  get have very strange file encodings. You don't always convert them manually
+  to utf-8.
 - **0.3.11** `newcommand` should work reliably with multiple arguments now
   (hopefully).
 - **0.3.10** Support for `newcommand*` substitution
