@@ -64,8 +64,11 @@ class LatexStream:
         :param n: Number of characters to advance.
         :return: None
         """
-        self._pos += n
-        self._pos = min(self._pos, len(self._text))
+        for _ in range(n):
+            try:
+                self.next()
+            except _ParserError:
+                break
 
     def peek(self, pure=False) -> typing.Optional[str]:
         """
