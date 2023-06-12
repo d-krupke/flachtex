@@ -32,7 +32,7 @@ class OriginOfRange:
         """
         All indices >=n shall be cut off.
         :param n: New end index
-        :return: Modified OriginOFRange corresponding to shortend string. If this origin is
+        :return: Modified OriginOFRange corresponding to shortened string. If this origin is
         no longer contained, return None.
         """
         if self.begin >= n:

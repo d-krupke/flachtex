@@ -241,6 +241,8 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.3.12** improves robustness of command parsing (of potentially faulty LaTeX
+  code)
 - **0.3.11** `newcommand` should work reliably with multiple arguments now
   (hopefully).
 - **0.3.10** Support for `newcommand*` substitution

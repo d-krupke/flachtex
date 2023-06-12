@@ -1,5 +1,5 @@
 """
-Some parts should be skipped for the flattening. Here you can specify correponsing
+Some parts should be skipped for the flattening. Here you can specify corresponding
 rules.
 """
 

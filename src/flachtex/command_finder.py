@@ -8,6 +8,14 @@ but otherwise should be safe.
 import logging
 import typing
 
+_logger = logging.getLogger(__file__)
+
+
+class _ParserError(ValueError):
+    def __init__(self, msg, position):
+        super().__init__(msg)
+        self.position = position
+
 
 class LatexStream:
     """
@@ -16,7 +24,7 @@ class LatexStream:
     is escaped.
     """
 
-    def __init__(self, text, pos=0):
+    def __init__(self, text: str, pos: int = 0):
         self._text = text
         self._pos = pos
         self.is_escaped = False
@@ -29,6 +37,9 @@ class LatexStream:
         Update the current status regarding comment or escaping.
         :return: Next character.
         """
+        if not self.has_next():
+            msg = "No next character."
+            raise _ParserError(msg, self._pos)
         c = self._text[self._pos]
         self._pos += 1
         if self._read_escape:
@@ -47,6 +58,15 @@ class LatexStream:
             self._read_escape = False
         return c
 
+    def advance(self, n: int = 1) -> None:
+        """
+        Advance the cursor by n characters.
+        :param n: Number of characters to advance.
+        :return: None
+        """
+        self._pos += n
+        self._pos = min(self._pos, len(self._text))
+
     def peek(self, pure=False) -> typing.Optional[str]:
         """
         Return the current character. Do not move the cursor.
@@ -54,6 +74,8 @@ class LatexStream:
         :return: Next character.
         """
         if pure and (self._read_escape or self.in_comment):
+            return None
+        if not self.has_next():
             return None
         c = self._text[self._pos]
         return c
@@ -138,12 +160,6 @@ class CommandMatch:
         )
 
 
-class _ParserError(ValueError):
-    def __init__(self, msg, position):
-        super().__init__(msg)
-        self.position = position
-
-
 class CommandFinder:
     """
     Finds occurrences of latex commands in a string and provides you with
@@ -181,7 +197,7 @@ class CommandFinder:
             raise _ParserError(msg, stream.pos())
         command = ""
         stream.next()  # skip '\'
-        while stream.peek().isalpha() or stream.peek() == "*":
+        while stream.has_next() and (stream.peek().isalpha() or stream.peek() == "*"):
             command += stream.next()
         return command
 
@@ -194,14 +210,14 @@ class CommandFinder:
             return None
         if stream.peek(True) == begin:  # properly encapsulated parameter.
             depth = 1
-            stream.next()
+            stream.advance()
             start = stream.pos()  # after {[
             while depth > 0:
                 if stream.peek(True) == begin:
                     depth += 1
                 if stream.peek(True) == end:
                     depth -= 1
-                stream.next()
+                stream.advance()
             return (start, stream.pos() - 1)  # at }]
         else:  # parameter without begin/end-symbols ([],{})
             if self._strict:
@@ -219,7 +235,7 @@ class CommandFinder:
                 self._read_parameters(stream, command_name)
                 return (start, stream.pos())
             else:
-                stream.next()
+                stream.advance()
                 return (start, stream.pos())
 
     def _read_new_command_parameters(self, stream: LatexStream):
@@ -267,8 +283,8 @@ class CommandFinder:
                 else:
                     stream.next()
             except _ParserError as pe:
-                logging.getLogger("flachtex").error(str(pe))
-                stream.next()
+                _logger.error(str(pe))
+                stream.advance()
         return None
 
     def find_all(self, text: str):

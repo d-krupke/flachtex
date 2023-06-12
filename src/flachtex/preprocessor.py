@@ -1,8 +1,8 @@
 import typing
 
-from flachtex.cycle_prevention import CyclePrevention
-from flachtex.filefinder import FileFinder
-from flachtex.rules import (
+from .cycle_prevention import CyclePrevention
+from .filefinder import FileFinder
+from .rules import (
     BASIC_INCLUDE_RULES,
     BASIC_SKIP_RULES,
     Import,
@@ -10,7 +10,7 @@ from flachtex.rules import (
     apply_substitution_rules,
     find_imports,
 )
-from flachtex.traceable_string import TraceableString
+from .traceable_string import TraceableString
 
 
 class Preprocessor:
@@ -56,7 +56,7 @@ class Preprocessor:
     ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an
-        excpetion in case of cyclic include-commands.
+        excepetion in case of cyclic include-commands.
         :param file_path: The path to the file to be included.
         :param _cycle_prevention: Internal use for preventing cyclic inclusions.
         :return: A flat LaTeX-document containing all included files.

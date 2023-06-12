@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 def readme():
@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="flachtex",
-    version="0.3.11",
+    version="0.3.12",
     description="A traceable LaTeX flattener.",
     long_description=readme(),
     long_description_content_type="text/markdown",

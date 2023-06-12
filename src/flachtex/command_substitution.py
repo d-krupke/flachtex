@@ -1,5 +1,5 @@
 """
-LaTeX allows you to define your own commands using `\newcommand`.
+LaTeX allows you to define your own commands using ``\\newcommand``.
 This can be a useful feature for many scenarios, but it complicates the source.
 Thus, this file implements some logic to substitute these usages by their definition.
 """
@@ -11,10 +11,12 @@ from flachtex.command_finder import CommandFinder
 from flachtex.rules import Substitution, SubstitutionRule
 from flachtex.traceable_string import TraceableString
 
+_logger = logging.getLogger(__file__)
+
 
 class NewCommandDefinition:
     """
-    For defining a LaTeX-command definition with `\\newcommand`. Note that optional
+    For defining a LaTeX-command definition with ``\\newcommand``. Note that optional
     parameters are not supported right now.
     """
 
@@ -27,7 +29,7 @@ class NewCommandDefinition:
         :param command: The actual command definition.
         """
         if not isinstance(command, TraceableString):
-            logging.getLogger("flachtex").warning("Command is not traceable!")
+            _logger.warning("Command is not traceable!")
             command = TraceableString(str(command), None)
         self.name = name
         self.num_parameters = num_parameters
@@ -41,7 +43,7 @@ def find_new_commands(
     latex_document: TraceableString,
 ) -> typing.Iterable[NewCommandDefinition]:
     """
-    Find all commands defined by `\newcommand`. Not compatible with optional commands
+    Find all commands defined by ``\\newcommand``. Not compatible with optional commands
     right now.
     :param latex_document: The LaTeX-document to be scanned.
     :return: Iterator on all command definitions.
@@ -88,11 +90,11 @@ class NewCommandSubstitution(SubstitutionRule):
         if name[0] == "\\":
             name = name[1:]
         if name in self._commands:
-            logging.getLogger("flachtex").warning(
+            _logger.warning(
                 f"Multiple definitions of command '{name}'. Substitution may be buggy."
             )
         self._commands[name] = definition
-        logging.getLogger("flachtex").info(f"Detected {definition}")
+        _logger.info(f"Detected {definition}")
         self._command_finder.add_command(name, definition.num_parameters)
 
     def _get_substitution(
@@ -119,12 +121,15 @@ class NewCommandSubstitution(SubstitutionRule):
             parameters = [content[p[0] : p[1]] for p in match.parameters]
             sub = self._get_substitution(definition.command, parameters)
             end = match.end
-            if self._space_sub and definition.num_parameters == 0:
+            if (
+                self._space_sub
+                and definition.num_parameters == 0
+                and not str(sub).strip().endswith("\\xspace")
+            ):
                 # The usage of a command like "\\cmd bla" is actually equivalent to
                 # "\\cmd{}bla". This function tries to simulate this.
-                if not str(sub).strip().endswith("\\xspace"):
-                    while content[end] == " ":
-                        end += 1
-                    if end != match.end:
-                        sub += TraceableString("{}", None)  # add non-space seperator
+                while content[end] == " ":
+                    end += 1
+                if end != match.end:
+                    sub += TraceableString("{}", None)  # add non-space separator
             yield Substitution(match.start, end, sub)
