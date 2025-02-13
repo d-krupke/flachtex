@@ -52,7 +52,6 @@ class SubimportChangesRule(SubimportSubstitutionRule):
         for match in cf.find_all(str(content)):
 
             pos_path = self.which(match)
-            print(type(match.start))
             if content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][0:1] == "/":
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
@@ -80,13 +79,11 @@ def _sort_subimport_replacements(
     if len(replacements) <= 1:
         return replacements
     replacements_ = []
-    for i, e in enumerate(replacements[:-1]):
-        if e.intersects(replacements[i + 1]):
+    for i, e in enumerate(replacements):
+        if e.intersects(replacements[(i + 1) % len(replacements)]):
             continue
         else:
             replacements_ += [e]
-    if not replacements[-1].intersects(replacements[0]):
-        replacements_ += [replacements[-1]]
     return replacements_
 
 
@@ -107,7 +104,7 @@ def apply_subimport_substitution_rules(
     replacements = _find_subimport_substitutions(content, replacement_rules, subimport_path)
     max_itererations = 10
     while replacements and max_itererations:
-        #replacements = _sort_subimport_replacements(replacements)
+        replacements = _sort_subimport_replacements(replacements)
         offset = 0
         for replacement in replacements:
             if replacement.replacement_text:
