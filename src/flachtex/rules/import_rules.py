@@ -8,9 +8,11 @@ from flachtex.utils import Range
 
 
 class Import(Range):
-    def __init__(self, start: int, end: int, path: str):
+    def __init__(self, start: int, end: int, path: str, is_subimport: bool, subimport_path: str):
         super().__init__(start, end)
         self.path = path
+        self.is_subimport = is_subimport if not None else False
+        self.subimport_path = subimport_path
 
 
 class ImportRule(abc.ABC):
@@ -43,7 +45,7 @@ class NativeImportRule(RegexImportRule):
 
     def determine_include(self, match: re.Match):
         import_path = match.group("path").strip()
-        return Import(match.start("command"), match.end("command"), import_path)
+        return Import(match.start("command"), match.end("command"), import_path, False, None)
 
 
 class SubimportRule(RegexImportRule):
@@ -60,10 +62,11 @@ class SubimportRule(RegexImportRule):
     def determine_include(self, match: re.Match):
         # This function implements the functionality for the subimports library.
         # The import is separated into two parts
+        subimport_path = match.group("dir").strip()
         import_path = os.path.join(
             match.group("dir").strip(), match.group("file").strip()
         )
-        return Import(match.start("command"), match.end("command"), import_path)
+        return Import(match.start("command"), match.end("command"), import_path, True, subimport_path)
 
 
 # %%FLACHTEX-EXPLICIT-IMPORT[path/file.tex]
@@ -77,7 +80,7 @@ class ExplicitImportRule(RegexImportRule):
         # We are using the group feature of regex to extract the path (<path>)
         # as well as the part to be replaced (<command>)
         import_path = match.group("path").strip()
-        return Import(match.start("command"), match.end("command"), import_path)
+        return Import(match.start("command"), match.end("command"), import_path, False, None)
 
 
 def _sort_imports(imports: typing.List[Import]) -> typing.List[Import]:
