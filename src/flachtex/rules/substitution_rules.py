@@ -70,8 +70,8 @@ def _sort_replacements(
     if len(replacements) <= 1:
         return replacements
     replacements_ = []
-    for i, e in enumerate(replacements[:-1]):
-        if e.intersects(replacements[i + 1]):
+    for i, e in enumerate(replacements):
+        if e.intersects(replacements[(i + 1) % len(replacements)]):
             continue
         else:
             replacements_ += [e]
