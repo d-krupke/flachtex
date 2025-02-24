@@ -15,7 +15,7 @@ class Range:
         # one begin lies within the other
         if self.start <= other.start < self.end:
             return True
-        if other.start <= self.start < self.end:
+        if other.start <= self.start < self.end and not other.end <= self.start:
             return True
         return False
 
