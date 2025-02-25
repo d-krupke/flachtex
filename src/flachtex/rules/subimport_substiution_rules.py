@@ -62,13 +62,13 @@ class SubimportChangesRule(SubimportSubstitutionRule):
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
-                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][2:-1],content.origins),
+                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][2:],content.origins),
                 )
             else:
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
-                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:(match.parameters[pos_path][-1] + 1)],content.origins),
+                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:(match.parameters[pos_path][-1])],content.origins),
                 )
 
 
