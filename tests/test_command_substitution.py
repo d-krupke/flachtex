@@ -1,5 +1,4 @@
-import unittest
-
+import pytest
 from flachtex import TraceableString
 from flachtex.command_substitution import (
     NewCommandDefinition,
@@ -28,50 +27,46 @@ doc1 = TraceableString(
     "main.tex",
 )
 
+def test_empty():
+    cmds = list(find_new_commands(TraceableString("", "Main.tex")))
+    assert cmds == []
 
-class CommandSubstitutionTest(unittest.TestCase):
-    def test_empty(self):
-        cmds = list(find_new_commands(TraceableString("", "Main.tex")))
-        self.assertListEqual(cmds, [])
+def test_doc1():
+    cmds = list(find_new_commands(doc1))
+    assert len(cmds) == 11
+    sub = NewCommandSubstitution()
+    for cmd in cmds:
+        sub.new_command(NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command))
+    replacements = list(sub.find_all(doc1))
+    assert len(replacements) == 1
 
-    def test_doc1(self):
-        cmds = list(find_new_commands(doc1))
-        assert len(cmds) == 11
-        sub = NewCommandSubstitution()
-        for cmd in cmds:
-            sub.new_command(
-                NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command)
-            )
-        replacements = list(sub.find_all(doc1))
-        assert len(replacements) == 1
-
-    def test2(self):
-        sub = NewCommandSubstitution()
-        sub.new_command(
-            NewCommandDefinition(
-                TraceableString("test", None), 0, TraceableString("TEST\\xspace", None)
-            )
+def test_substitution_with_zero_parameters():
+    sub = NewCommandSubstitution()
+    sub.new_command(
+        NewCommandDefinition(
+            TraceableString("test", None), 0, TraceableString("TEST\\xspace", None)
         )
-        s = apply_substitution_rules(
-            TraceableString("Bla \\test asd \\test{}.", None), [sub]
-        )
-        assert str(s) == "Bla TEST\\xspace asd TEST\\xspace{}."
+    )
+    s = apply_substitution_rules(
+        TraceableString("Bla \\test asd \\test{}.", None), [sub]
+    )
+    assert str(s) == "Bla TEST\\xspace asd TEST\\xspace{}."
 
-    def test3(self):
-        sub = NewCommandSubstitution()
-        sub.new_command(
-            NewCommandDefinition(
-                TraceableString("test", None), 0, TraceableString("TEST", None)
-            )
+def test_substitution_with_non_space_replacement():
+    sub = NewCommandSubstitution()
+    sub.new_command(
+        NewCommandDefinition(
+            TraceableString("test", None), 0, TraceableString("TEST", None)
         )
-        s = apply_substitution_rules(
-            TraceableString("Bla \\test asd \\test{}.", None), [sub]
-        )
-        assert str(s) == "Bla TEST{}asd TEST{}."
+    )
+    s = apply_substitution_rules(
+        TraceableString("Bla \\test asd \\test{}.", None), [sub]
+    )
+    assert str(s) == "Bla TEST{}asd TEST{}."
 
-    def test4(self):
-        doc2 = TraceableString(
-            r"""
+def test_complex_commands():
+    doc2 = TraceableString(
+        r"""
 \newcommand{\test}[2]{#2-#1}
 \newcommand{\testa}[2]{#2-#1.}
 \newcommand{\testb}[2]{#2#1.}
@@ -82,19 +77,17 @@ class CommandSubstitutionTest(unittest.TestCase):
 \testb{aa}{bb}.
 \end{document}
 """,
-            "main.tex",
-        )
-        cmds = list(find_new_commands(doc2))
-        assert len(cmds) == 3
-        sub = NewCommandSubstitution()
-        for cmd in cmds:
-            sub.new_command(
-                NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command)
-            )
-        replacements = list(sub.find_all(doc2))
-        assert len(replacements) == 4
-        s = apply_substitution_rules(doc2, [sub])
-        assert (
-            str(s).strip()
-            == "\\newcommand{\\test}[2]{#2-#1}\n\\newcommand{\\testa}[2]{#2-#1.}\n\\newcommand{\\testb}[2]{#2#1.}\n\\begin{document}\nb-a.\\\\\nb-a..\\\\\nba..\nbbaa..\n\\end{document}".strip()
-        )
+        "main.tex",
+    )
+    cmds = list(find_new_commands(doc2))
+    assert len(cmds) == 3
+    sub = NewCommandSubstitution()
+    for cmd in cmds:
+        sub.new_command(NewCommandDefinition(cmd.name, cmd.num_parameters, cmd.command))
+    replacements = list(sub.find_all(doc2))
+    assert len(replacements) == 4
+    s = apply_substitution_rules(doc2, [sub])
+    assert (
+        str(s).strip()
+        == "\\newcommand{\\test}[2]{#2-#1}\n\\newcommand{\\testa}[2]{#2-#1.}\n\\newcommand{\\testb}[2]{#2#1.}\n\\begin{document}\nb-a.\\\\\nb-a..\\\\\nba..\nbbaa..\n\\end{document}".strip()
+    )
