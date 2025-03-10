@@ -241,6 +241,7 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.3.14** Bugfix by Nutron2112
 - **0.3.13** improves robustness of command parsing (of potentially faulty LaTeX
   code)
 - **0.3.12** Made parsing of non utf-8 encodings more robust. Some templates you
