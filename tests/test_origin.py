@@ -1,12 +1,13 @@
-import pytest
 from flachtex import FileFinder
 from flachtex.preprocessor import Preprocessor
+
 
 def flatten(document, root="main.tex"):
     preprocessor = Preprocessor("/")
     file_finder = FileFinder("/", document)
     preprocessor.file_finder = file_finder
     return preprocessor.expand_file(root), preprocessor.structure
+
 
 def test_no_import():
     test_document = {
@@ -22,6 +23,7 @@ def test_no_import():
     assert flat.get_origin_of_line(1, 0) == ("main.tex", 7)
     assert flat.get_origin_of_line(2, 4) == ("main.tex", 18)
     assert flat.get_origin(17) == ("main.tex", 17)
+
 
 def test_single_import():
     test_document = {

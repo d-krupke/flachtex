@@ -1,4 +1,5 @@
 import pytest
+
 from flachtex import TraceableString
 
 

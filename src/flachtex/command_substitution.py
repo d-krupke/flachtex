@@ -3,6 +3,7 @@ LaTeX allows you to define your own commands using ``\\newcommand``.
 This can be a useful feature for many scenarios, but it complicates the source.
 Thus, this file implements some logic to substitute these usages by their definition.
 """
+
 import logging
 import re
 import typing

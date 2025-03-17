@@ -5,7 +5,7 @@ import os
 from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
 from .preprocessor import Preprocessor
-from .rules import ChangesRule, TodonotesRule, SubimportChangesRule
+from .rules import ChangesRule, SubimportChangesRule, TodonotesRule
 
 
 def parse_arguments():

@@ -45,5 +45,4 @@ __ALL__ = [
     "SubimportSubstitutionRule",
     "SubimportSubstitution",
     "apply_subimport_substitution_rules",
-
 ]

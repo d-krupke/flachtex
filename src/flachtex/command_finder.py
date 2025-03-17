@@ -5,6 +5,7 @@ could not be tricked.
 The following code can still be tricked by implicit parameters (no brackets {}),
 but otherwise should be safe.
 """
+
 import logging
 import typing
 
@@ -222,24 +223,23 @@ class CommandFinder:
                     depth -= 1
                 stream.advance()
             return (start, stream.pos() - 1)  # at }]
-        else:  # parameter without begin/end-symbols ([],{})
-            if self._strict:
-                context = stream._text[stream.pos() - 10 : stream.pos() + 10]
-                msg = f"Parameters without brackets ('{context}')."
-                raise _ParserError(msg, stream.pos())
-            start = stream.pos()
-            if stream.peek() == "\\":
-                context = stream._text[stream.pos() - 10 : stream.pos() + 10]
-                logging.getLogger("flachtex").warning(
-                    f"Ambiguous parameters due to missing brackets ('{context}')."
-                    f" This can lead to corruptions."
-                )
-                command_name = self._read_command_name(stream)
-                self._read_parameters(stream, command_name)
-                return (start, stream.pos())
-            else:
-                stream.advance()
-                return (start, stream.pos())
+        # parameter without begin/end-symbols ([],{})
+        if self._strict:
+            context = stream._text[stream.pos() - 10 : stream.pos() + 10]
+            msg = f"Parameters without brackets ('{context}')."
+            raise _ParserError(msg, stream.pos())
+        start = stream.pos()
+        if stream.peek() == "\\":
+            context = stream._text[stream.pos() - 10 : stream.pos() + 10]
+            logging.getLogger("flachtex").warning(
+                f"Ambiguous parameters due to missing brackets ('{context}')."
+                f" This can lead to corruptions."
+            )
+            command_name = self._read_command_name(stream)
+            self._read_parameters(stream, command_name)
+            return (start, stream.pos())
+        stream.advance()
+        return (start, stream.pos())
 
     def _read_new_command_parameters(self, stream: LatexStream):
         command_name = self._read_parameter(stream, "{", "}", mandatory=True)
@@ -272,12 +272,9 @@ class CommandFinder:
                             )
                             end = stream.pos()
                             return CommandMatch(command, begin, end, params, opt_params)
-                        else:
-                            #  In the \\newcommand definition, the commands are not actually
-                            # applied, so we want to skip them.
-                            self._read_parameter(
-                                stream, "{", "}"
-                            )  # skip definition name
+                        #  In the \\newcommand definition, the commands are not actually
+                        # applied, so we want to skip them.
+                        self._read_parameter(stream, "{", "}")  # skip definition name
                     elif command in self._commands:
                         opt_params, params = self._read_parameters(stream, command)
                         end = stream.pos()

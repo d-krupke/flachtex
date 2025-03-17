@@ -4,6 +4,7 @@ directives for flachtex. Removing them already in the preprocessor would potenti
 lead to unwanted effects.
 If you don't want comments, simply apply the function below to the output.
 """
+
 import re
 
 from .traceable_string import TraceableString

@@ -7,9 +7,9 @@ from .rules import (
     BASIC_SKIP_RULES,
     Import,
     apply_skip_rules,
+    apply_subimport_substitution_rules,
     apply_substitution_rules,
     find_imports,
-    apply_subimport_substitution_rules,
 )
 from .traceable_string import TraceableString
 
@@ -38,10 +38,14 @@ class Preprocessor:
         content = apply_substitution_rules(content, self.substitution_rules)
         return content
 
-    def include_path(self, content: TraceableString, subimport_path: str) -> TraceableString:
-        if subimport_path is None or subimport_path == '':
+    def include_path(
+        self, content: TraceableString, subimport_path: str
+    ) -> TraceableString:
+        if subimport_path is None or subimport_path == "":
             return content
-        content = apply_subimport_substitution_rules(content, self.subimport_rules, subimport_path)
+        content = apply_subimport_substitution_rules(
+            content, self.subimport_rules, subimport_path
+        )
         return content
 
     def find_imports(self, content: TraceableString) -> typing.List[Import]:
@@ -60,8 +64,11 @@ class Preprocessor:
         }
 
     def expand_file(
-        self, file_path: str, _cycle_prevention: typing.Optional[CyclePrevention] = None,
-            is_subimport: bool = False, subimport_path: str = None
+        self,
+        file_path: str,
+        _cycle_prevention: typing.Optional[CyclePrevention] = None,
+        is_subimport: bool = False,
+        subimport_path: str = None,
     ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an
@@ -82,7 +89,12 @@ class Preprocessor:
             insertion_file = self.file_finder.find_best_matching_path(
                 match.path, origin=file_path
             )
-            insertion = self.expand_file(insertion_file, _cycle_prevention, match.is_subimport, match.subimport_path)
+            insertion = self.expand_file(
+                insertion_file,
+                _cycle_prevention,
+                match.is_subimport,
+                match.subimport_path,
+            )
             content = (
                 content[: match.start + offset]
                 + insertion

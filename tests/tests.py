@@ -1,4 +1,3 @@
-import pytest
 from flachtex import FileFinder, Preprocessor
 from flachtex.rules import SubimportChangesRule
 
@@ -114,9 +113,11 @@ def test_complex_subimports():
         "main.tex": "line 0\nline 1\n\\input{sub.tex}\nline 4\n\\subimport{subimport}{subimport.tex}\nline 10\n",
         "sub.tex": "line 2\nline 3",
         "subimport/subimport.tex": "line 5\n\\includegraphics{1.pdf}\n\\includegraphics{/2.pdf}\n\\includegraphics{./3.pdf}\nline 6\n\\include{./subimportb.tex}\nline 9\n",
-        "subimport/subimportb.tex": "line 7\n\\includegraphics{4.pdf}\nline 8\n"
+        "subimport/subimportb.tex": "line 7\n\\includegraphics{4.pdf}\nline 8\n",
     }
-    assert flatten(document) == ("line 0\nline 1\nline 2\nline 3\nline 4\n"
-                                               "line 5\n\\includegraphics{./subimport/1.pdf}\n\\includegraphics{./subimport/2.pdf}\n\\includegraphics{./subimport/3.pdf}\nline 6\n"
-                                               "line 7\n\\includegraphics{./subimport/4.pdf}\nline 8\n\nline 9\n"
-                                               "\nline 10\n")
+    assert flatten(document) == (
+        "line 0\nline 1\nline 2\nline 3\nline 4\n"
+        "line 5\n\\includegraphics{./subimport/1.pdf}\n\\includegraphics{./subimport/2.pdf}\n\\includegraphics{./subimport/3.pdf}\nline 6\n"
+        "line 7\n\\includegraphics{./subimport/4.pdf}\nline 8\n\nline 9\n"
+        "\nline 10\n"
+    )

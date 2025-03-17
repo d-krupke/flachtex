@@ -2,6 +2,7 @@
 Some parts of the LaTeX-document may need to be substituted.
 The rules defined in this file allow such a handling.
 """
+
 import abc
 import logging
 import typing
@@ -25,50 +26,95 @@ class SubimportSubstitution(Range):
 
 class SubimportSubstitutionRule(abc.ABC):
     @abc.abstractmethod
-    def find_all(self, content: TraceableString, subimport_path=None) -> typing.Iterable[SubimportSubstitution]:
+    def find_all(
+        self, content: TraceableString, subimport_path=None
+    ) -> typing.Iterable[SubimportSubstitution]:
         pass
 
 
 class SubimportChangesRule(SubimportSubstitutionRule):
-
     def __init__(self):
         self._includegraphics = ["includegraphics", 0]
         self._bibliography = ["bibliography", 0]
 
-    def which(self,match: CommandMatch):
-        members = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("__")]
+    def which(self, match: CommandMatch):
+        members = [
+            attr
+            for attr in dir(self)
+            if not callable(getattr(self, attr)) and not attr.startswith("__")
+        ]
         members = members[1:]
         for m in members:
             if match.command == m[1:]:
                 return vars(self)[m][1]
 
-
-    def find_all(self, content: TraceableString, subimport_path=None) -> typing.Iterable[SubimportSubstitution]:
+    def find_all(
+        self, content: TraceableString, subimport_path=None
+    ) -> typing.Iterable[SubimportSubstitution]:
         assert isinstance(content, TraceableString)
         cf = CommandFinder()
         cf.add_command(self._includegraphics[0], 1, 1)
         cf.add_command(self._bibliography[0], 1, 0)
 
         for match in cf.find_all(str(content)):
-
             pos_path = self.which(match)
-            if content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][0:1] == "/":
+            if (
+                content.content[
+                    match.parameters[pos_path][0] : match.parameters[pos_path][1]
+                ][0:1]
+                == "/"
+            ):
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
-                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][1:],content.origins),
+                    TraceableString(
+                        "./"
+                        + subimport_path
+                        + "/"
+                        + content.content[
+                            match.parameters[pos_path][0] : match.parameters[pos_path][
+                                1
+                            ]
+                        ][1:],
+                        content.origins,
+                    ),
                 )
-            elif content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][0:2] == "./":
+            elif (
+                content.content[
+                    match.parameters[pos_path][0] : match.parameters[pos_path][1]
+                ][0:2]
+                == "./"
+            ):
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
-                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:match.parameters[pos_path][1]][2:],content.origins),
+                    TraceableString(
+                        "./"
+                        + subimport_path
+                        + "/"
+                        + content.content[
+                            match.parameters[pos_path][0] : match.parameters[pos_path][
+                                1
+                            ]
+                        ][2:],
+                        content.origins,
+                    ),
                 )
             else:
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
-                    TraceableString("./" + subimport_path + "/" + content.content[match.parameters[pos_path][0]:(match.parameters[pos_path][-1])],content.origins),
+                    TraceableString(
+                        "./"
+                        + subimport_path
+                        + "/"
+                        + content.content[
+                            match.parameters[pos_path][0] : (
+                                match.parameters[pos_path][-1]
+                            )
+                        ],
+                        content.origins,
+                    ),
                 )
 
 
@@ -82,13 +128,14 @@ def _sort_subimport_replacements(
     for i, e in enumerate(replacements):
         if e.intersects(replacements[(i + 1) % len(replacements)]):
             continue
-        else:
-            replacements_ += [e]
+        replacements_ += [e]
     return replacements_
 
 
 def _find_subimport_substitutions(
-    content: TraceableString, replacement_rules: typing.List[SubimportSubstitutionRule], subimport_path
+    content: TraceableString,
+    replacement_rules: typing.List[SubimportSubstitutionRule],
+    subimport_path,
 ) -> typing.List[SubimportSubstitution]:
     replacements = []
     for rule in replacement_rules:
@@ -99,9 +146,11 @@ def _find_subimport_substitutions(
 def apply_subimport_substitution_rules(
     content: TraceableString,
     replacement_rules: typing.List[SubimportSubstitutionRule],
-    subimport_path
+    subimport_path,
 ):
-    replacements = _find_subimport_substitutions(content, replacement_rules, subimport_path)
+    replacements = _find_subimport_substitutions(
+        content, replacement_rules, subimport_path
+    )
     max_itererations = 10
     while replacements and max_itererations:
         replacements = _sort_subimport_replacements(replacements)

@@ -2,6 +2,7 @@
 Some parts of the LaTeX-document may need to be substituted.
 The rules defined in this file allow such a handling.
 """
+
 import abc
 import logging
 import typing
@@ -73,8 +74,7 @@ def _sort_replacements(
     for i, e in enumerate(replacements):
         if e.intersects(replacements[(i + 1) % len(replacements)]):
             continue
-        else:
-            replacements_ += [e]
+        replacements_ += [e]
     return replacements_
 
 
