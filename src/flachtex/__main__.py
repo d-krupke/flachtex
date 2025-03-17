@@ -5,7 +5,7 @@ import os
 from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
 from .preprocessor import Preprocessor
-from .rules import ChangesRule, TodonotesRule
+from .rules import ChangesRule, TodonotesRule, SubimportChangesRule
 
 
 def parse_arguments():
@@ -64,6 +64,7 @@ def main():
         preprocessor.substitution_rules.append(ChangesRule(args.changes_prefix))
     if args.newcommand:
         preprocessor.substitution_rules.append(find_command_definitions(file_path))
+    preprocessor.subimport_rules.append(SubimportChangesRule())
     doc = preprocessor.expand_file(file_path)
 
     if args.comments:

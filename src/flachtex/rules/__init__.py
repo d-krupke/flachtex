@@ -14,6 +14,12 @@ from .substitution_rules import (
     Substitution,
     apply_substitution_rules,
 )
+from .subimport_substiution_rules import (
+    SubimportChangesRule,
+    SubimportSubstitutionRule,
+    SubimportSubstitution,
+    apply_subimport_substitution_rules,
+)
 
 BASIC_INCLUDE_RULES = [NativeImportRule(), SubimportRule(), ExplicitImportRule()]
 BASIC_SKIP_RULES = [BasicSkipRule()]
@@ -35,4 +41,9 @@ __ALL__ = [
     "SubstitutionRule",
     "Substitution",
     "apply_substitution_rules",
+    "SubimportChangesRule",
+    "SubimportSubstitutionRule",
+    "SubimportSubstitution",
+    "apply_subimport_substitution_rules",
+
 ]

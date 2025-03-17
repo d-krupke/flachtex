@@ -9,6 +9,7 @@ from .rules import (
     apply_skip_rules,
     apply_substitution_rules,
     find_imports,
+    apply_subimport_substitution_rules,
 )
 from .traceable_string import TraceableString
 
@@ -20,6 +21,7 @@ class Preprocessor:
         the relative paths of include statements.
         """
         self.skip_rules = list(BASIC_SKIP_RULES)
+        self.subimport_rules = []
         self.substitution_rules = []
         self.import_rules = list(BASIC_INCLUDE_RULES)
         self.file_finder = FileFinder(project_root)
@@ -34,6 +36,12 @@ class Preprocessor:
         content = TraceableString(self.file_finder.read(file_path), origin=file_path)
         content = apply_skip_rules(content, self.skip_rules)
         content = apply_substitution_rules(content, self.substitution_rules)
+        return content
+
+    def include_path(self, content: TraceableString, subimport_path: str) -> TraceableString:
+        if subimport_path is None or subimport_path == '':
+            return content
+        content = apply_subimport_substitution_rules(content, self.subimport_rules, subimport_path)
         return content
 
     def find_imports(self, content: TraceableString) -> typing.List[Import]:
@@ -52,7 +60,8 @@ class Preprocessor:
         }
 
     def expand_file(
-        self, file_path: str, _cycle_prevention: typing.Optional[CyclePrevention] = None
+        self, file_path: str, _cycle_prevention: typing.Optional[CyclePrevention] = None,
+            is_subimport: bool = False, subimport_path: str = None
     ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an
@@ -73,12 +82,14 @@ class Preprocessor:
             insertion_file = self.file_finder.find_best_matching_path(
                 match.path, origin=file_path
             )
-            insertion = self.expand_file(insertion_file, _cycle_prevention)
+            insertion = self.expand_file(insertion_file, _cycle_prevention, match.is_subimport, match.subimport_path)
             content = (
                 content[: match.start + offset]
                 + insertion
                 + content[match.end + offset :]
             )
             offset += len(insertion) - len(match)
+        if is_subimport:
+            content = self.include_path(content, subimport_path)
         _cycle_prevention.pop()
         return content
