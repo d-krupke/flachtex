@@ -28,7 +28,7 @@ setup(
     entry_points={
         "console_scripts": ["flachtex=flachtex.__main__:main"],
     },
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     include_package_data=True,
     zip_safe=False,
 )
