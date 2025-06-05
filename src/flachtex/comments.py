@@ -7,6 +7,7 @@ If you don't want comments, simply apply the function below to the output.
 
 import re
 
+from .rules.skip_rules import CommentsPackageSkipRule, apply_skip_rules
 from .traceable_string import TraceableString
 
 
@@ -25,4 +26,7 @@ def remove_comments(content: TraceableString) -> TraceableString:
     for comment in comments:
         content = content[: comment[0] + offset] + content[comment[1] + offset :]
         offset -= comment[1] - comment[0]
+
+    # remove comments from the comments package
+    content = apply_skip_rules(content, [CommentsPackageSkipRule()])
     return content

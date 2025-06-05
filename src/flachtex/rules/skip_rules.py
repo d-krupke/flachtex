@@ -27,6 +27,7 @@ class RegexSkipRule(SkipRule):
         self.regex = re.compile(regex, re.MULTILINE | re.DOTALL)
 
     def find_all(self, content) -> typing.Iterable[Range]:
+        print("FIND ALL!")
         for match in self.regex.finditer(content):
             yield self.determine_skip(match)
 
@@ -66,6 +67,23 @@ class BasicSkipRule(RegexSkipRule):
         span_to_be_skipped = Range(
             match.start("skipped_part"), match.end("skipped_part")
         )
+        return span_to_be_skipped
+
+class CommentsPackageSkipRule(RegexSkipRule):
+    """
+    Skips all the comments added with the `comment` package, or more concrete, all
+    content between `\\begin{comment}` and `\\end{comment}`.
+    """
+
+    def __init__(self):
+        # Match \begin{comment} ... \end{comment}, including all lines between, and trailing newline
+        super().__init__(
+            r"(?P<skipped_part>[ \t]*\\begin{comment}\s*.*?\\end{comment}[ \t]*\n?)"
+        )
+
+    def determine_skip(self, match: re.Match):
+        span_to_be_skipped = Range(match.start("skipped_part"), match.end("skipped_part"))
+        print(f"Skipping comment: {span_to_be_skipped}")
         return span_to_be_skipped
 
 
