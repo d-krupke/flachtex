@@ -27,7 +27,6 @@ class RegexSkipRule(SkipRule):
         self.regex = re.compile(regex, re.MULTILINE | re.DOTALL)
 
     def find_all(self, content) -> typing.Iterable[Range]:
-        print("FIND ALL!")
         for match in self.regex.finditer(content):
             yield self.determine_skip(match)
 
@@ -64,10 +63,10 @@ class BasicSkipRule(RegexSkipRule):
         )
 
     def determine_skip(self, match: re.Match):
-        span_to_be_skipped = Range(
+        return Range(
             match.start("skipped_part"), match.end("skipped_part")
         )
-        return span_to_be_skipped
+
 
 class CommentsPackageSkipRule(RegexSkipRule):
     """
@@ -82,9 +81,9 @@ class CommentsPackageSkipRule(RegexSkipRule):
         )
 
     def determine_skip(self, match: re.Match):
-        span_to_be_skipped = Range(match.start("skipped_part"), match.end("skipped_part"))
-        print(f"Skipping comment: {span_to_be_skipped}")
-        return span_to_be_skipped
+        return Range(
+            match.start("skipped_part"), match.end("skipped_part")
+        )
 
 
 def _find_skips(content, skip_rules):
@@ -118,6 +117,8 @@ def apply_skip_rules(
     sorted_skips = _sort_and_check_ranges(skips)
     offset = 0
     for skip in sorted_skips:
-        content = content[: skip.start + offset] + content[skip.end + offset :]
+        a = content[: skip.start + offset]
+        b = content[skip.end + offset :]
+        content = a + b
         offset -= len(skip)
     return content

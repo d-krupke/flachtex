@@ -99,16 +99,17 @@ class TraceableString:
             raise NotImplementedError(msg)
         return start, stop
 
-    def __getitem__(self, item):
-        if isinstance(item, slice):
-            content = self.content[item]
-            start, stop = self._normalize_slice(item)
-            origins = (o.slice(start, stop) for o in self.origins)
-            origins = [o for o in origins if o is not None]
-            ts = TraceableString(content, None)
-            ts.origins = origins
-            return ts
-        return self.content[item]
+    def __getitem__(self, item) -> "TraceableString":
+        if isinstance(item, int):
+            item = slice(item, item + 1)
+        assert isinstance(item, slice)
+        content = self.content[item]
+        start, stop = self._normalize_slice(item)
+        origins = (o.slice(start, stop) for o in self.origins)
+        origins = [o for o in origins if o is not None]
+        ts = TraceableString(content, None)
+        ts.origins = origins
+        return ts
 
     def get_origin(self, i):
         if i >= len(self):
@@ -124,6 +125,7 @@ class TraceableString:
     def get_origin_of_line(self, line, col=0):
         if self._line_index is None:
             self._populate_line_index()
+        assert self._line_index is not None, "Line index not populated."
         i = self._line_index[line] + col
         return self.get_origin(i)
 
@@ -158,7 +160,7 @@ class TraceableString:
             ]
         except (KeyError, TypeError) as e:
             msg = f"Data not compatible: {e}"
-            raise ValueError(msg)
+            raise ValueError(msg) from e
         return ts
 
     def __add__(self, other):

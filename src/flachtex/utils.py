@@ -15,9 +15,7 @@ class Range:
         # one begin lies within the other
         if self.start <= other.start < self.end:
             return True
-        if other.start <= self.start < self.end and not other.end <= self.start:
-            return True
-        return False
+        return bool(other.start <= self.start < self.end and not other.end <= self.start)
 
     def __le__(self, other):
         return self.start <= other.start

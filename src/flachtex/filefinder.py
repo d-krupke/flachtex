@@ -5,22 +5,22 @@ from pathlib import Path
 
 class FileSystem:
     """
-    Wraps the file system access such that it could be replaced with a simple dict
-    to ease testing.
+    Wraps file-system access so it can be replaced with a stub for testing.
     """
 
-    def __contains__(self, item) -> bool:
-        return os.path.exists(item) and os.path.isfile(item)
+    def __contains__(self, path: str) -> bool:
+        return Path(path).is_file()
 
-    def __getitem__(self, item) -> str:
-        if item not in self:
-            msg = f"Could not find {item}."
-            raise KeyError(msg)
-        with Path(item).open(errors="ignore") as f:
-            try:
-                return str(f.read())
-            except Exception as e:
-                return f"\n%ERROR (flachtex): Could not read '{item}': '{e}'\n"
+    def __getitem__(self, path: str) -> str:
+        file_path = Path(path)
+        if not file_path.is_file():
+            msg = f"Could not find '{path}'"
+            raise FileNotFoundError(msg)
+        try:
+            return file_path.read_text(errors="ignore")
+        except Exception as exc:
+            msg = f"Error reading '{path}': {exc!s}"
+            raise OSError(msg) from exc
 
 
 class FileFinder:
@@ -86,7 +86,6 @@ class FileFinder:
             if d_ == d:
                 break
             d = d_  # go one directory above
-
 
     def read(self, path) -> str:
         """

@@ -6,6 +6,7 @@ from .rules import (
     BASIC_INCLUDE_RULES,
     BASIC_SKIP_RULES,
     Import,
+    SkipRule,
     apply_skip_rules,
     apply_subimport_substitution_rules,
     apply_substitution_rules,
@@ -20,7 +21,7 @@ class Preprocessor:
         :param project_root: The root of the LaTeX-document. Important for resolving
         the relative paths of include statements.
         """
-        self.skip_rules = list(BASIC_SKIP_RULES)
+        self.skip_rules: list[SkipRule] = list(BASIC_SKIP_RULES)
         self.subimport_rules = []
         self.substitution_rules = []
         self.import_rules = list(BASIC_INCLUDE_RULES)
@@ -35,18 +36,16 @@ class Preprocessor:
         """
         content = TraceableString(self.file_finder.read(file_path), origin=file_path)
         content = apply_skip_rules(content, self.skip_rules)
-        content = apply_substitution_rules(content, self.substitution_rules)
-        return content
+        return apply_substitution_rules(content, self.substitution_rules)
 
     def include_path(
         self, content: TraceableString, subimport_path: str
     ) -> TraceableString:
         if subimport_path is None or subimport_path == "":
             return content
-        content = apply_subimport_substitution_rules(
+        return apply_subimport_substitution_rules(
             content, self.subimport_rules, subimport_path
         )
-        return content
 
     def find_imports(self, content: TraceableString) -> typing.List[Import]:
         """
@@ -54,8 +53,7 @@ class Preprocessor:
         :param content: The content of the LaTeX-file.
         :return: List of imports in the content.
         """
-        imports = find_imports(content, self.import_rules)
-        return imports
+        return find_imports(content, self.import_rules)
 
     def _add_structure(self, path: str, included_files: typing.List[str]):
         self.structure[path] = {
@@ -68,7 +66,7 @@ class Preprocessor:
         file_path: str,
         _cycle_prevention: typing.Optional[CyclePrevention] = None,
         is_subimport: bool = False,
-        subimport_path: str|None = None,
+        subimport_path: str | None = None,
     ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an
@@ -105,6 +103,11 @@ class Preprocessor:
             except KeyError as e:
                 pass
         if is_subimport:
+            if not subimport_path:
+                msg = "Subimport path must be provided for subimports."
+                raise ValueError(
+                    msg
+                )
             content = self.include_path(content, subimport_path)
         _cycle_prevention.pop()
         return content

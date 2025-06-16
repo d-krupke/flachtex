@@ -9,7 +9,12 @@ from flachtex.utils import Range
 
 class Import(Range):
     def __init__(
-        self, start: int, end: int, path: str, is_subimport: bool, subimport_path: str|None
+        self,
+        start: int,
+        end: int,
+        path: str,
+        is_subimport: bool,
+        subimport_path: str | None,
     ):
         super().__init__(start, end)
         self.path = path
