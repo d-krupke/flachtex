@@ -241,6 +241,10 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.5.0** Now will only replace `\input` and `\include` commands for which
+  the file exists. Otherwise, it will leave the command as is. This allows you to
+  use `\input` and `\include` commands for files that are not part of the
+  document, e.g., for some automatically generated files.
 - **0.4.0** Support for the `comments` package.
 - **0.3.15** Fixes [Issue #8](https://github.com/d-krupke/flachtex/issues/8)
 - **0.3.14** Bugfix by Nutron2112
