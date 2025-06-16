@@ -68,7 +68,7 @@ class Preprocessor:
         file_path: str,
         _cycle_prevention: typing.Optional[CyclePrevention] = None,
         is_subimport: bool = False,
-        subimport_path: str = None,
+        subimport_path: str|None = None,
     ) -> TraceableString:
         """
         Expand/flatten the file. This is performed recursively, but there will be an

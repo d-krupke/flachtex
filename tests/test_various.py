@@ -1,13 +1,16 @@
-from flachtex import FileFinder, Preprocessor
+from flachtex import FileFinder, Preprocessor, remove_comments
 from flachtex.rules import SubimportChangesRule
 
 
-def flatten(document, root="main.tex"):
+def flatten(document, root="main.tex", comments=False):
     preprocessor = Preprocessor("/")
     file_finder = FileFinder("/", document)
     preprocessor.file_finder = file_finder
     preprocessor.subimport_rules.append(SubimportChangesRule())
-    return str(preprocessor.expand_file(root))
+    doc = preprocessor.expand_file(root)
+    if comments:
+         doc = remove_comments(doc)
+    return str(doc)
 
 
 def test_no_import():
@@ -107,6 +110,25 @@ def test_multiple_skip_blocks():
     }
     assert flatten(document) == "line 0\n\n\nline 5\n"
 
+def test_comment_package():
+    document = {
+        "main.tex": "line 0\nline 1\n\\begin{comment}\nline 2\n\\end{comment}\nline 3\n",
+    }
+    assert flatten(document, comments=True) == "line 0\nline 1\nline 3\n"
+
+
+def test_comment_package_double():
+    document = {
+        "main.tex": "line 0\nline 1\n\\begin{comment}\nline 2\n\\end{comment}\nline 3\n\\begin{comment}\nline 4\n\\end{comment}\nline 5\n",
+    }
+    assert flatten(document, comments=True) == "line 0\nline 1\nline 3\nline 5\n"
+
+
+def test_comment_package_double_space_and_tab():
+    document = {
+        "main.tex": "line 0\nline 1\n\t\\begin{comment}\nline 2\n\t\\end{comment}\nline 3\n  \\begin{comment}\nline 4\n  \\end{comment}\nline 5\n",
+    }
+    assert flatten(document, comments=True) == "line 0\nline 1\nline 3\nline 5\n"
 
 def test_complex_subimports():
     document = {

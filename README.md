@@ -241,6 +241,7 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.4.0** Support for the `comments` package.
 - **0.3.15** Fixes [Issue #8](https://github.com/d-krupke/flachtex/issues/8)
 - **0.3.14** Bugfix by Nutron2112
 - **0.3.13** improves robustness of command parsing (of potentially faulty LaTeX

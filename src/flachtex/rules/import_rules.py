@@ -9,7 +9,7 @@ from flachtex.utils import Range
 
 class Import(Range):
     def __init__(
-        self, start: int, end: int, path: str, is_subimport: bool, subimport_path: str
+        self, start: int, end: int, path: str, is_subimport: bool, subimport_path: str|None
     ):
         super().__init__(start, end)
         self.path = path
@@ -107,9 +107,9 @@ def _sort_imports(imports: typing.List[Import]) -> typing.List[Import]:
 def find_imports(
     content: TraceableString, include_rules: typing.Iterable[ImportRule]
 ) -> typing.List[Import]:
-    content = str(content)
+    content_ = str(content)
     imports = []
     for rule in include_rules:
-        imports += list(rule.find_all(content))
+        imports += list(rule.find_all(content_))
     imports = _sort_imports(imports)
     return imports

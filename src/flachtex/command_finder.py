@@ -140,7 +140,7 @@ class CommandMatch:
     def __repr__(self):
         return (
             f"{self.start}:{self.end} \\{self.command}"
-            + "["
+             "["
             + "".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)
             + "]"
             + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
