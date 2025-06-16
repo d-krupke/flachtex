@@ -86,21 +86,24 @@ class Preprocessor:
         imports = self.find_imports(content)
         self._add_structure(file_path, [import_.path for import_ in imports])
         for match in imports:
-            insertion_file = self.file_finder.find_best_matching_path(
-                match.path, origin=file_path
-            )
-            insertion = self.expand_file(
-                insertion_file,
-                _cycle_prevention,
-                match.is_subimport,
-                match.subimport_path,
-            )
-            content = (
-                content[: match.start + offset]
-                + insertion
-                + content[match.end + offset :]
-            )
-            offset += len(insertion) - len(match)
+            try:
+                insertion_file = self.file_finder.find_best_matching_path(
+                    match.path, origin=file_path
+                )
+                insertion = self.expand_file(
+                    insertion_file,
+                    _cycle_prevention,
+                    match.is_subimport,
+                    match.subimport_path,
+                )
+                content = (
+                    content[: match.start + offset]
+                    + insertion
+                    + content[match.end + offset :]
+                )
+                offset += len(insertion) - len(match)
+            except KeyError as e:
+                pass
         if is_subimport:
             content = self.include_path(content, subimport_path)
         _cycle_prevention.pop()

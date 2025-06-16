@@ -82,7 +82,11 @@ class FileFinder:
         while d != self._project_root:  # stop if the root directory has been reached
             yield self._normalize(os.path.join(d, path))
             yield self._normalize(os.path.join(d, path)) + ".tex"
-            d = os.path.dirname(d)  # go one directory above
+            d_ = os.path.dirname(d)
+            if d_ == d:
+                break
+            d = d_  # go one directory above
+
 
     def read(self, path) -> str:
         """
