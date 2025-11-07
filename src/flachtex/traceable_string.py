@@ -74,6 +74,8 @@ class OriginOfRange:
             and self.offset == other.offset
         )
 
+    __hash__ = None  # Mutable object, not hashable
+
 
 class TraceableString:
     def __init__(self, content: str, origin: typing.Any, offset: int = 0):
@@ -172,6 +174,8 @@ class TraceableString:
         if not isinstance(other, TraceableString):
             return False
         return self.content == other.content and self.origins == other.origins
+
+    __hash__ = None  # Mutable object, not hashable
 
     def __repr__(self):
         return f"TraceableString({self.content}, {self.origins})"

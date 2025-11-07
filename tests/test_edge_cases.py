@@ -5,9 +5,12 @@ This test suite covers unusual scenarios, error conditions, and edge cases
 that may occur in real-world LaTeX documents.
 """
 
+import contextlib
+
 import pytest
 
-from flachtex import FileFinder, Preprocessor
+from flachtex import FileFinder, Preprocessor, remove_comments
+from flachtex.cycle_prevention import CycleException
 from flachtex.rules import SubimportChangesRule
 
 
@@ -19,8 +22,6 @@ def flatten(document, root="main.tex", comments=False):
     preprocessor.subimport_rules.append(SubimportChangesRule())
     doc = preprocessor.expand_file(root)
     if comments:
-        from flachtex import remove_comments
-
         doc = remove_comments(doc)
     return str(doc)
 
@@ -68,7 +69,7 @@ class TestCircularDependencies:
             "main.tex": "line 0\n\\input{a.tex}\nline 2\n",
             "a.tex": "line 1\n\\input{main.tex}\n",
         }
-        with pytest.raises(Exception):  # Should raise cycle prevention exception
+        with pytest.raises(CycleException):
             flatten(document)
 
     def test_indirect_circular_dependency(self):
@@ -78,7 +79,7 @@ class TestCircularDependencies:
             "a.tex": "line 1\n\\input{b.tex}\n",
             "b.tex": "line 2\n\\input{main.tex}\n",
         }
-        with pytest.raises(Exception):  # Should raise cycle prevention exception
+        with pytest.raises(CycleException):
             flatten(document)
 
 
@@ -321,11 +322,8 @@ class TestEdgeCaseCommands:
             "dir/{file}.tex": "1\n",
         }
         # This is an edge case - behavior may vary
-        try:
-            result = flatten(document)
-        except KeyError:
-            # It's acceptable if this fails
-            pass
+        with contextlib.suppress(KeyError):
+            flatten(document)
 
 
 class TestLargeDocuments:

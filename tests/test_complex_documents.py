@@ -6,7 +6,7 @@ with multiple chapters, sections, figures, and bibliographies.
 """
 
 
-from flachtex import FileFinder, Preprocessor
+from flachtex import FileFinder, Preprocessor, remove_comments
 from flachtex.rules import SubimportChangesRule
 
 
@@ -18,8 +18,6 @@ def flatten(document, root="main.tex", comments=False):
     preprocessor.subimport_rules.append(SubimportChangesRule())
     doc = preprocessor.expand_file(root)
     if comments:
-        from flachtex import remove_comments
-
         doc = remove_comments(doc)
     return str(doc)
 

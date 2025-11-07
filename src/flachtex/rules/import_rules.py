@@ -122,5 +122,4 @@ def find_imports(
     imports = []
     for rule in include_rules:
         imports += list(rule.find_all(content_))
-    imports = _sort_imports(imports)
-    return imports
+    return _sort_imports(imports)

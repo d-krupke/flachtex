@@ -49,7 +49,7 @@ def test_flatten_with_missing_file():
     file_finder = FileFinder("/", test_document)
     preprocessor.file_finder = file_finder
     # The \input{sub.tex} command should in this case not be expanded
-    flat, sources = preprocessor.expand_file("main.tex"), preprocessor.structure
+    flat = preprocessor.expand_file("main.tex")
     assert str(flat) == test_document["main.tex"], (
         "Flattened document should match the original when file is missing"
     )

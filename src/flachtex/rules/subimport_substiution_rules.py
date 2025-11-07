@@ -35,7 +35,7 @@ class SubimportChangesRule(SubimportSubstitutionRule):
         self._includegraphics = ["includegraphics", 0]
         self._bibliography = ["bibliography", 0]
 
-    def which(self, match: CommandMatch):
+    def which(self, match: CommandMatch) -> int | None:
         members = [
             attr
             for attr in dir(self)
@@ -45,6 +45,7 @@ class SubimportChangesRule(SubimportSubstitutionRule):
         for m in members:
             if match.command == m[1:]:
                 return vars(self)[m][1]
+        return None
 
     def find_all(
         self, content: TraceableString, subimport_path=None

@@ -81,7 +81,8 @@ def find_main_tex_file(directory: Path) -> str:
         # If all else fails, return the first one
         return tex_files[0].name
 
-    raise FileNotFoundError(f"No .tex files found in {directory}")
+    msg = f"No .tex files found in {directory}"
+    raise FileNotFoundError(msg)
 
 
 def download_arxiv_paper(
@@ -99,7 +100,7 @@ def download_arxiv_paper(
         Tuple of (extraction directory Path, main file name)
     """
 
-    def tex_file_filter(tarinfo, path):
+    def tex_file_filter(tarinfo, _path):
         """Filter to only extract .tex files."""
         if tarinfo.name.endswith(".tex"):
             return tarinfo
@@ -125,7 +126,7 @@ def download_arxiv_paper(
         response = None
         try:
             response = urllib.request.urlopen(req)
-            with open(path_tar, "wb") as out_file:
+            with Path(path_tar).open("wb") as out_file:
                 out_file.write(response.read())
         finally:
             if response is not None:
