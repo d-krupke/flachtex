@@ -41,17 +41,63 @@ from flachtex import Preprocessor
 from flachtex.rules import SubimportChangesRule
 
 
-def download_arxiv_paper(url: str, extract_to: Path, main_file: str = "main.tex") -> Path:
+def find_main_tex_file(directory: Path) -> str:
+    """
+    Attempt to find the main .tex file in a directory.
+
+    Looks for common names like main.tex, paper.tex, or the first .tex file found.
+
+    Args:
+        directory: Directory to search for .tex files
+
+    Returns:
+        Name of the likely main .tex file
+
+    Raises:
+        FileNotFoundError: If no .tex files are found
+    """
+    # Common main file names in order of preference
+    common_names = ["main.tex", "paper.tex", "manuscript.tex", "article.tex"]
+
+    for name in common_names:
+        if (directory / name).exists():
+            return name
+
+    # If no common name found, look for any .tex file
+    tex_files = list(directory.glob("*.tex"))
+    if tex_files:
+        # If there's only one .tex file, that's probably it
+        if len(tex_files) == 1:
+            return tex_files[0].name
+        # Otherwise, prefer files that don't look like includes
+        # (avoid files starting with numbers or containing "section", "chapter", etc.)
+        for tex_file in tex_files:
+            name_lower = tex_file.name.lower()
+            if not any(
+                skip in name_lower
+                for skip in ["section", "chapter", "appendix", "abstract", "intro"]
+            ):
+                return tex_file.name
+
+        # If all else fails, return the first one
+        return tex_files[0].name
+
+    raise FileNotFoundError(f"No .tex files found in {directory}")
+
+
+def download_arxiv_paper(
+    url: str, extract_to: Path, main_file: str | None = None
+) -> tuple[Path, str]:
     """
     Download and extract an arxiv paper.
 
     Args:
         url: The arxiv e-print URL (e.g., "https://arxiv.org/e-print/1505.03116")
         extract_to: Directory to extract the paper to
-        main_file: Name of the main tex file (used to check if already downloaded)
+        main_file: Name of the main tex file. If None, will attempt to auto-detect.
 
     Returns:
-        Path to the extraction directory
+        Tuple of (extraction directory Path, main file name)
     """
 
     def tex_file_filter(tarinfo, path):
@@ -61,10 +107,9 @@ def download_arxiv_paper(url: str, extract_to: Path, main_file: str = "main.tex"
         return None
 
     extract_path = Path(extract_to)
-    main_path = extract_path / main_file
 
     # Check if already downloaded (cached)
-    if not main_path.exists():
+    if not extract_path.exists() or not any(extract_path.glob("*.tex")):
         # Create directory if it doesn't exist
         extract_path.mkdir(parents=True, exist_ok=True)
 
@@ -94,7 +139,11 @@ def download_arxiv_paper(url: str, extract_to: Path, main_file: str = "main.tex"
         # Clean up the tarball
         Path(path_tar).unlink()
 
-    return extract_path
+    # Auto-detect main file if not provided
+    if main_file is None:
+        main_file = find_main_tex_file(extract_path)
+
+    return extract_path, main_file
 
 
 def flatten_paper(base_dir: Path, main_file: str = "main.tex") -> str:
@@ -119,8 +168,13 @@ def flatten_paper(base_dir: Path, main_file: str = "main.tex") -> str:
 
 # List of arxiv papers to test
 # Format: (arxiv_id, url, expected_main_file)
+# Use None for expected_main_file to auto-detect
 ARXIV_PAPERS = [
-    ("1505.03116", "https://arxiv.org/e-print/1505.03116", "main.tex"),
+    # Classic deep learning paper
+    ("1505.03116", "https://arxiv.org/e-print/1505.03116", None),
+    # Another paper with different structure (if network allows)
+    # ("1706.03762", "https://arxiv.org/e-print/1706.03762", None),  # Attention is All You Need
+    # ("1409.1556", "https://arxiv.org/e-print/1409.1556", None),  # VGG
     # Add more papers here as needed
 ]
 
@@ -147,7 +201,7 @@ def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str, tmp_pat
 
     try:
         # Download and extract the paper (or use cached version)
-        paper_dir = download_arxiv_paper(url, extract_to, main_file)
+        paper_dir, detected_main_file = download_arxiv_paper(url, extract_to, main_file)
     except urllib.error.HTTPError as e:
         # Skip if we can't download (network issues, rate limiting, etc.)
         pytest.skip(f"Could not download paper {arxiv_id}: {e}")
@@ -156,7 +210,7 @@ def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str, tmp_pat
 
     try:
         # Attempt to flatten the paper
-        flattened = flatten_paper(paper_dir, main_file)
+        flattened = flatten_paper(paper_dir, detected_main_file)
 
         # Basic sanity checks
         assert flattened is not None, "Flattened content should not be None"
@@ -182,6 +236,7 @@ def test_arxiv_custom_urls(tmp_path: Path):
     # Add your custom arxiv URLs here
     custom_urls = [
         # ("paper_id", "https://arxiv.org/e-print/XXXX.XXXXX", "main.tex"),
+        # ("paper_id2", "https://arxiv.org/e-print/YYYY.YYYYY", None),  # None = auto-detect
     ]
 
     if not custom_urls:
@@ -192,11 +247,16 @@ def test_arxiv_custom_urls(tmp_path: Path):
     for arxiv_id, url, main_file in custom_urls:
         extract_to = cache_dir / f"custom_paper_{arxiv_id}"
 
-        # Download and extract the paper
-        paper_dir = download_arxiv_paper(url, extract_to, main_file)
+        try:
+            # Download and extract the paper
+            paper_dir, detected_main_file = download_arxiv_paper(
+                url, extract_to, main_file
+            )
+        except urllib.error.HTTPError as e:
+            pytest.skip(f"Could not download custom paper {arxiv_id}: {e}")
 
         # Flatten the paper
-        flattened = flatten_paper(paper_dir, main_file)
+        flattened = flatten_paper(paper_dir, detected_main_file)
 
         # Verify the flattening succeeded
         assert flattened is not None
