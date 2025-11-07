@@ -1,6 +1,46 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "flachtex"
+version = "0.5.0"
+description = "A traceable LaTeX flattener"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Dominik Krupke", email = "krupke@ibr.cs.tu-bs.de"}
+]
+keywords = ["LaTeX", "flatten", "preprocessing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing :: Markup :: LaTeX",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/d-krupke/flachtex"
+Repository = "https://github.com/d-krupke/flachtex"
+Issues = "https://github.com/d-krupke/flachtex/issues"
+
+[project.scripts]
+flachtex = "flachtex.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+flachtex = ["py.typed"]
 
 
 
@@ -45,7 +85,7 @@ extend-ignore = [
     "PT004",   # Incorrect, just usefixtures instead.
     "RUF009",  # Too easy to get a false positive
 ]
-target-version = "py37"
+target-version = "py310"
 src = ["src"]
 unfixable = ["T20", "F841"]
 exclude = []
@@ -54,16 +94,21 @@ exclude = []
 [tool.mypy]
 files = ["src", "tests"]
 mypy_path = ["$MYPY_CONFIG_FILE_DIR/src"]
-python_version = "3.7"
+python_version = "3.10"
 warn_unused_configs = true
 show_error_codes = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true
-disallow_untyped_defs = false
+disallow_untyped_defs = true
+check_untyped_defs = true
+warn_return_any = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["cetsp_bnb2.*"]
-disallow_untyped_defs = true
+module = ["tests.*"]
+disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = ["numpy", "pathspec", "setuptools_scm", "hatch_fancy_pypi_readme"]
@@ -71,7 +116,7 @@ ignore_missing_imports = true
 
 
 [tool.pylint]
-py-version = "3.7"
+py-version = "3.10"
 jobs = "0"
 reports.output-format = "colorized"
 similarities.ignore-imports = "yes"
