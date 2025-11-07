@@ -19,7 +19,7 @@ class FileSystemProtocol(Protocol):
         ...
 
 
-class FileSystem:
+class FileSystem(FileSystemProtocol):
     """
     File system wrapper for actual disk I/O.
 
@@ -86,9 +86,8 @@ class FileFinder:
             file_system: A file system implementation or dictionary for testing.
                         If None, uses the real file system.
         """
-        if file_system is None:
-            file_system = FileSystem()
-        self.file_system: FileSystemProtocol | dict[str, str] = file_system
+        file_system_ = file_system if file_system is not None else FileSystem()
+        self.file_system: FileSystemProtocol | dict[str, str] = file_system_
         root_str = str(project_root)
         self._PATH = [root_str]
         self._project_root = root_str

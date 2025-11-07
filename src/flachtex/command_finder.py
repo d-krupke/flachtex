@@ -1,12 +1,40 @@
-"""
-Parsing LaTeX-commands perfectly is difficult, because the rules are quite complex.
-There are many attempts using regular expressions, but I haven't seen one that
-could not be tricked.
-The following code can still be tricked by implicit parameters (no brackets {}),
-but otherwise should be safe.
+"""flachtex.command_finder
+=================================
+
+Robust (but still heuristic) parsing of LaTeX command invocations.
+
+Why not pure regular expressions?
+---------------------------------
+LaTeX syntax around commands is context sensitive (e.g. nested braces, escaped
+characters, comments started by ``%`` until end of line). Pure regular
+expressions easily become brittle and either miss valid constructs or produce
+false positives. Here we implement a tiny stateful stream parser that tracks:
+
+* Current position in the input
+* Whether we are inside a comment (after an unescaped ``%`` until newline)
+* Whether the current character was escaped by a preceding backslash
+
+Scope & Limitations
+-------------------
+The parser focuses on extracting commands together with their mandatory and
+optional parameter spans (character index tuples). Implicit parameters (those
+not wrapped in ``{}`` or ``[]``) are accepted in non-strict mode but can still
+be ambiguous. In ``strict`` mode they raise an error. We do not attempt full
+LaTeX macro expansion here.
+
+Returned Spans
+--------------
+Parameters are represented as ``(start, end)`` tuples where ``start`` is the
+index of the first character inside the delimiters and ``end`` is the index of
+the last character (inclusive). Optional parameters may be ``None`` if they are
+missing.
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Iterator
+from typing import NamedTuple
 
 _logger = logging.getLogger(__file__)
 
@@ -17,11 +45,30 @@ class _ParserError(ValueError):
         self.position = position
 
 
-class LatexStream:
+ParamSpan = tuple[int, int]
+"""Type alias for a (start, end) inclusive character span inside the source text."""
+
+OptParamSpan = ParamSpan | None
+"""Optional parameter span; ``None`` means the optional parameter is absent."""
+
+
+class CommandSpec(NamedTuple):
+    """Specification for a LaTeX command.
+
+    Attributes:
+        num_params: Number of mandatory ``{}`` delimited parameters.
+        num_opt: Number of optional ``[]`` delimited parameters.
     """
-    The LatexStreams job is to keep track of the reading position and
-    whether we are currently in a comment section or the current symbol
-    is escaped.
+
+    num_params: int
+    num_opt: int
+
+
+class LatexStream:
+    """Stateful character stream over LaTeX source.
+
+    Maintains cursor position, comment state and escape state. Provides helper
+    methods used by :class:`CommandFinder` while scanning the document.
     """
 
     def __init__(self, text: str, pos: int = 0):
@@ -32,10 +79,11 @@ class LatexStream:
         self._read_escape = False
 
     def next(self) -> str:
-        """
-        Return the next character and move the cursor the next position.
-        Update the current status regarding comment or escaping.
-        :return: Next character.
+        """Consume and return the next character.
+
+        Updates internal state tracking escape sequences and comments.
+        Raises:
+            _ParserError: If called at end of stream.
         """
         if not self.has_next():
             msg = "No next character."
@@ -59,22 +107,21 @@ class LatexStream:
         return c
 
     def advance(self, n: int = 1) -> None:
-        """
-        Advance the cursor by n characters.
-        :param n: Number of characters to advance.
-        :return: None
-        """
+        """Advance the cursor ``n`` characters (idempotent at end-of-stream)."""
         for _ in range(n):
             try:
                 self.next()
             except _ParserError:
                 break
 
-    def peek(self, pure=False) -> str | None:
-        """
-        Return the current character. Do not move the cursor.
-        :param pure: Only return characters that are not in a comment or escaped.
-        :return: Next character.
+    def peek(self, pure: bool = False) -> str | None:
+        """Return current character without consuming it.
+
+        Args:
+            pure: If ``True`` return ``None`` when the position is escaped or in
+                a comment.
+        Returns:
+            The current character or ``None``.
         """
         if pure and (self._read_escape or self.in_comment):
             return None
@@ -83,52 +130,42 @@ class LatexStream:
         return self._text[self._pos]
 
     def _peek_is_space(self) -> bool:
-        """
-        Check if the next character is a whitespace character.
-        :return: True if the next character is a whitespace character.
-        """
+        """Return ``True`` if current character is whitespace."""
         peek = self.peek()
         if peek is None:
             return False
         return peek.isspace()
 
     def has_next(self) -> bool:
-        """
-        Returns whether there is a next character.
-        :return: True if there is a next character.
-        """
+        """Return ``True`` if stream has more characters."""
         return self._pos < len(self._text)
 
     def pos(self) -> int:
-        """
-        Current position of the cursor.
-        :return: Position of the cursor.
-        """
+        """Return current cursor position (0-based index)."""
         return self._pos
 
     def skip_whitespace_and_comments(self) -> None:
-        """
-        Skips over all whitespace characters and comments.
-        :return: None
-        """
+        """Advance past consecutive whitespace and/or comments."""
         while self.in_comment or (self._peek_is_space() and not self.is_escaped):
             self.next()
 
-    def __iter__(self):
-        """
-        Iterate over all characters. You can use the other methods during the
-        iteration, allowing you for example to skip all whitespaces and comments
-        in the loop.
-        :return: All characters.
-        """
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over remaining characters until end-of-stream."""
         while self.has_next():
             c = self.next()
             yield c
 
 
 class CommandMatch:
-    """
-    A match of the CommandFinder.
+    """Represents a single LaTeX command match.
+
+    Attributes:
+        command: Command name without leading backslash (e.g. ``section``).
+        start: Index of backslash beginning the command.
+        end: Index one past the last character of the final parameter.
+        parameters: Mandatory parameter spans.
+        opt_parameters: Optional parameter spans or ``None`` if an optional
+            parameter was not present.
     """
 
     def __init__(
@@ -136,16 +173,16 @@ class CommandMatch:
         command: str,
         start: int,
         end: int,
-        parameters: list[tuple[int, int]],
-        opt_parameters: list[tuple[int, int] | None],
-    ):
+        parameters: list[ParamSpan],
+        opt_parameters: list[OptParamSpan],
+    ) -> None:
         self.command = command  # command name
         self.start = start  # position of the start of the command
         self.end = end  # position after the last parameter of the command
         self.parameters = parameters  # list of the mandatory parameters
         self.opt_parameters = opt_parameters  # list of the optional parameters
 
-    def __repr__(self):
+    def __repr__(self) -> str:  # pragma: no cover - repr is for debugging only
         return (
             f"{self.start}:{self.end} \\{self.command}"
             "["
@@ -154,8 +191,8 @@ class CommandMatch:
             + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)
         )
 
-    def __eq__(self, other):
-        if other is None:
+    def __eq__(self, other: object) -> bool:  # pragma: no cover - simple structural eq
+        if not isinstance(other, CommandMatch):
             return False
         return (
             self.command,
@@ -171,51 +208,92 @@ class CommandMatch:
             other.opt_parameters,
         )
 
+    def __hash__(self) -> int:  # pragma: no cover - hashing convenience
+        return hash(
+            (
+                self.command,
+                self.start,
+                self.end,
+                tuple(self.parameters),
+                tuple(self.opt_parameters),
+            )
+        )
+
 
 class CommandFinder:
-    """
-    Finds occurrences of latex commands in a string and provides you with
-    the position and nicely parsed parameters.
+    """Find LaTeX command invocations within a text.
+
+    Usage pattern:
+
+    >>> cf = CommandFinder().add_command("todo", num_params=1, num_opt=1)
+    >>> match = cf.find("Before \\todo[opt]{mandatory} after")
+    >>> match.command
+    'todo'
+    >>> match.parameters  # list of mandatory parameter spans
+    [(start_index, end_index)]
+    >>> match.opt_parameters  # list of optional parameter spans / None
+    [(start_index, end_index)]
+
+    Set ``strict=True`` to reject implicit (non-braced) parameters.
     """
 
-    def __init__(self, strict=False):
-        self._strict = strict
-        self._commands = {}
+    def __init__(self, strict: bool = False):
+        self._strict: bool = strict
+        self._commands: dict[str, CommandSpec] = {}
 
-    def add_command(self, name, num_params=1, num_opt=0):
+    def add_command(
+        self, name: str, num_params: int = 1, num_opt: int = 0
+    ) -> CommandFinder:
+        """Register a command specification.
+
+        Args:
+            name: Command name without leading backslash.
+            num_params: Number of mandatory ``{}`` parameters.
+            num_opt: Number of optional ``[]`` parameters.
+        Returns:
+            ``self`` (allows chaining).
         """
-        :param name:
-        :param num_params:
-        :param num_opt:
-        :return:
-        """
-        self._commands[name] = (num_params, num_opt)
+        self._commands[name] = CommandSpec(num_params, num_opt)
         return self
 
-    def _read_parameters(self, stream, name: str):
+    def _read_parameters(
+        self, stream: LatexStream, name: str
+    ) -> tuple[list[OptParamSpan], list[ParamSpan]]:
+        """Read parameters for a previously registered command.
+
+        Returns a tuple ``(optional_params, mandatory_params)`` where optional
+        parameters may be ``None`` if omitted.
+        """
         if name not in self._commands:
             return [], []
         n, n_opt = self._commands[name]
-        opt_params = [
+        opt_params: list[OptParamSpan] = [
             self._read_parameter(stream, "[", "]", False) for _ in range(n_opt)
         ]
-        params = [self._read_parameter(stream, "{", "}") for _ in range(n)]
+        params: list[ParamSpan] = []
+        for _ in range(n):
+            span = self._read_parameter(stream, "{", "}", True)
+            assert span is not None
+            params.append(span)
         return opt_params, params
 
-    def _read_command_name(self, stream):
+    def _read_command_name(self, stream: LatexStream) -> str:
         stream.skip_whitespace_and_comments()
         if stream.peek(True) != "\\":
             msg = f"No command. Next character is '{stream.peek()}'."
             raise _ParserError(msg, stream.pos())
         command = ""
         stream.next()  # skip '\'
-        while stream.has_next() and (stream.peek().isalpha() or stream.peek() == "*"):
+        while stream.has_next():
+            nxt = stream.peek()
+            if nxt is None or not (nxt.isalpha() or nxt == "*"):
+                break
             command += stream.next()
         return command
 
     def _read_parameter(
-        self, stream: LatexStream, begin: str, end: str, mandatory=True
-    ):
+        self, stream: LatexStream, begin: str, end: str, mandatory: bool = True
+    ) -> OptParamSpan:
         stream.skip_whitespace_and_comments()
         if not mandatory and stream.peek(True) != begin:
             # No begin-symbol ({[) -> no parameter if not mandatory
@@ -249,18 +327,24 @@ class CommandFinder:
         stream.advance()
         return (start, stream.pos())
 
-    def _read_new_command_parameters(self, stream: LatexStream):
-        command_name = self._read_parameter(stream, "{", "}", mandatory=True)
+    def _read_new_command_parameters(
+        self, stream: LatexStream
+    ) -> tuple[list[OptParamSpan], list[ParamSpan]]:
+        command_name_span = self._read_parameter(stream, "{", "}", mandatory=True)
+        assert command_name_span is not None
         opt_params = [self._read_parameter(stream, "[", "]", mandatory=False)]
-        definition = self._read_parameter(stream, "{", "}", mandatory=True)
-        return opt_params, [command_name, definition]
+        definition_span = self._read_parameter(stream, "{", "}", mandatory=True)
+        assert definition_span is not None
+        return opt_params, [command_name_span, definition_span]
 
     def find(self, text: str, begin: int = 0) -> CommandMatch | None:
-        """
-        Find first occurrence of a command in the text.
-        :param text: The text to be searched.
-        :param begin: The point to start in the text.
-        :return:
+        """Find first registered command occurrence in ``text`` starting at ``begin``.
+
+        Args:
+            text: The LaTeX source to search.
+            begin: Start index for the scan.
+        Returns:
+            A :class:`CommandMatch` or ``None`` if no command was found.
         """
         stream = LatexStream(text, begin)
         while stream.has_next():
@@ -295,10 +379,11 @@ class CommandFinder:
                 stream.advance()
         return None
 
-    def find_all(self, text: str):
+    def find_all(self, text: str) -> Iterator[CommandMatch]:
+        """Yield all command matches (non-overlapping, left-to-right)."""
         begin = 0
         result = self.find(text, begin)
-        while result:
+        while result is not None:
             yield result
             begin = result.end
             result = self.find(text, begin)
