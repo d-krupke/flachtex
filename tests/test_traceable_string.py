@@ -29,5 +29,5 @@ def test_invalid_json():
     ts = ts1 + ts2
     data = ts.to_json()
     data["origins"].append([])  # Introduce invalid data
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Data not compatible: list indices must be integers or slices, not str"):
         TraceableString.from_json(data)

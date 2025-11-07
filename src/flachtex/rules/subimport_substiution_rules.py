@@ -13,9 +13,7 @@ from flachtex.utils import Range
 
 
 class SubimportSubstitution(Range):
-    def __init__(
-        self, start: int, end: int, replacement_text: typing.Optional[TraceableString]
-    ):
+    def __init__(self, start: int, end: int, replacement_text: TraceableString | None):
         super().__init__(start, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
         self.replacement_text = replacement_text
@@ -27,7 +25,7 @@ class SubimportSubstitution(Range):
 class SubimportSubstitutionRule(abc.ABC):
     @abc.abstractmethod
     def find_all(
-        self, content: TraceableString, subimport_path=None
+        self, content: TraceableString, subimport_path: str | None = None
     ) -> typing.Iterable[SubimportSubstitution]:
         pass
 
@@ -37,7 +35,7 @@ class SubimportChangesRule(SubimportSubstitutionRule):
         self._includegraphics = ["includegraphics", 0]
         self._bibliography = ["bibliography", 0]
 
-    def which(self, match: CommandMatch):
+    def which(self, match: CommandMatch) -> int | None:
         members = [
             attr
             for attr in dir(self)
@@ -47,56 +45,48 @@ class SubimportChangesRule(SubimportSubstitutionRule):
         for m in members:
             if match.command == m[1:]:
                 return vars(self)[m][1]
+        return None
 
     def find_all(
-        self, content: TraceableString, subimport_path=None
+        self, content: TraceableString, subimport_path: str | None = None
     ) -> typing.Iterable[SubimportSubstitution]:
         assert isinstance(content, TraceableString)
+
+        # If subimport_path is None, we can't perform path adjustments
+        if subimport_path is None:
+            return
+
         cf = CommandFinder()
         cf.add_command(self._includegraphics[0], 1, 1)
         cf.add_command(self._bibliography[0], 1, 0)
 
         for match in cf.find_all(str(content)):
             pos_path = self.which(match)
-            if (
-                content.content[
-                    match.parameters[pos_path][0] : match.parameters[pos_path][1]
-                ][0:1]
-                == "/"
-            ):
+
+            # Skip if pos_path is None (command not recognized)
+            if pos_path is None:
+                continue
+
+            # Extract the path content
+            path_content = content.content[
+                match.parameters[pos_path][0] : match.parameters[pos_path][1]
+            ]
+
+            if path_content[0:1] == "/":
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
                     TraceableString(
-                        "./"
-                        + subimport_path
-                        + "/"
-                        + content.content[
-                            match.parameters[pos_path][0] : match.parameters[pos_path][
-                                1
-                            ]
-                        ][1:],
+                        f"./{subimport_path}/{path_content[1:]}",
                         content.origins,
                     ),
                 )
-            elif (
-                content.content[
-                    match.parameters[pos_path][0] : match.parameters[pos_path][1]
-                ][0:2]
-                == "./"
-            ):
+            elif path_content[0:2] == "./":
                 yield SubimportSubstitution(
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
                     TraceableString(
-                        "./"
-                        + subimport_path
-                        + "/"
-                        + content.content[
-                            match.parameters[pos_path][0] : match.parameters[pos_path][
-                                1
-                            ]
-                        ][2:],
+                        f"./{subimport_path}/{path_content[2:]}",
                         content.origins,
                     ),
                 )
@@ -105,21 +95,14 @@ class SubimportChangesRule(SubimportSubstitutionRule):
                     match.parameters[pos_path][0],
                     match.parameters[pos_path][1],
                     TraceableString(
-                        "./"
-                        + subimport_path
-                        + "/"
-                        + content.content[
-                            match.parameters[pos_path][0] : (
-                                match.parameters[pos_path][-1]
-                            )
-                        ],
+                        f"./{subimport_path}/{path_content}",
                         content.origins,
                     ),
                 )
 
 
 def _sort_subimport_replacements(
-    replacements: typing.List[SubimportSubstitution],
+    replacements: list[SubimportSubstitution],
 ) -> typing.Iterable[SubimportSubstitution]:
     replacements.sort()
     if len(replacements) <= 1:
@@ -134,9 +117,9 @@ def _sort_subimport_replacements(
 
 def _find_subimport_substitutions(
     content: TraceableString,
-    replacement_rules: typing.List[SubimportSubstitutionRule],
-    subimport_path,
-) -> typing.List[SubimportSubstitution]:
+    replacement_rules: list[SubimportSubstitutionRule],
+    subimport_path: str | None,
+) -> list[SubimportSubstitution]:
     replacements = []
     for rule in replacement_rules:
         replacements += list(rule.find_all(content, subimport_path))
@@ -145,9 +128,9 @@ def _find_subimport_substitutions(
 
 def apply_subimport_substitution_rules(
     content: TraceableString,
-    replacement_rules: typing.List[SubimportSubstitutionRule],
-    subimport_path,
-):
+    replacement_rules: list[SubimportSubstitutionRule],
+    subimport_path: str | None,
+) -> TraceableString:
     replacements = _find_subimport_substitutions(
         content, replacement_rules, subimport_path
     )

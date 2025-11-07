@@ -5,11 +5,10 @@ from pathlib import Path
 from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
 from .preprocessor import Preprocessor
-from .rules import ChangesRule, SubimportChangesRule, TodonotesRule
+from .rules import ChangesRule, TodonotesRule
 
 
-def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments for flachtex."""
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description="flachtex: Traceable LaTeX flattening."
     )
@@ -40,19 +39,14 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-def find_command_definitions(path: Path | str) -> NewCommandSubstitution:
+def find_command_definitions(path) -> NewCommandSubstitution:
     """
     Parse the document once independently to extract new commands.
-
-    Args:
-        path: Path to the LaTeX file
-
-    Returns:
-        NewCommandSubstitution with all detected command definitions
+    :param path:p
+    :return:
     """
-    path_obj = Path(path)
-    preprocessor = Preprocessor(str(path_obj.parent))
-    doc = preprocessor.expand_file(str(path_obj))
+    preprocessor = Preprocessor(str(Path(path).parent))
+    doc = preprocessor.expand_file(path)
     cmds = find_new_commands(doc)
     ncs = NewCommandSubstitution()
     for cmd in cmds:
@@ -60,19 +54,16 @@ def find_command_definitions(path: Path | str) -> NewCommandSubstitution:
     return ncs
 
 
-def main() -> None:
-    """Main entry point for flachtex command-line interface."""
+def main():
     args = parse_arguments()
-    file_path = Path(args.path[0])
-    preprocessor = Preprocessor(str(file_path.parent))
+    file_path = args.path[0]
+    file_path = args.path[0]
+    preprocessor = Preprocessor(str(Path(file_path).parent))
     if args.todos:
         preprocessor.skip_rules.append(TodonotesRule())
-    if args.changes:
         preprocessor.substitution_rules.append(ChangesRule(args.changes_prefix))
-    if args.newcommand:
-        preprocessor.substitution_rules.append(find_command_definitions(file_path))
-    preprocessor.subimport_rules.append(SubimportChangesRule())
-    doc = preprocessor.expand_file(str(file_path))
+    preprocessor.substitution_rules.append(find_command_definitions(file_path))
+    doc = preprocessor.expand_file(file_path)
 
     if args.comments:
         doc = remove_comments(doc)
