@@ -1,4 +1,3 @@
-
 from .import_rules import (
     ExplicitImportRule,
     Import,
@@ -64,7 +63,6 @@ __ALL__ = [
     "SubimportSubstitutionRule",
     "SubimportRule",
     "SubimportChangesRule",
-
     "SubimportSubstitution",
     "SubstitutionRule",
     "ChangesRule",

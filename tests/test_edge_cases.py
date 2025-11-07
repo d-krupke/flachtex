@@ -26,31 +26,37 @@ def flatten(document, root="main.tex", comments=False):
 
 
 class TestMissingFiles:
-    """Tests for handling missing files."""
+    """Tests for handling missing files (now silently skipped per feat20250616)."""
 
     def test_missing_input_file(self):
-        """Test that missing input files raise appropriate errors."""
+        """Test that missing input files are silently skipped."""
         document = {
             "main.tex": "line 0\n\\input{missing.tex}\nline 2\n",
         }
-        with pytest.raises((KeyError, RuntimeError)):
-            flatten(document)
+        result = flatten(document)
+        # Missing files are now silently skipped, not raised as errors
+        assert "line 0" in result
+        assert "line 2" in result
 
     def test_missing_include_file(self):
-        """Test that missing include files raise appropriate errors."""
+        """Test that missing include files are silently skipped."""
         document = {
             "main.tex": "line 0\n\\include{missing}\nline 2\n",
         }
-        with pytest.raises((KeyError, RuntimeError)):
-            flatten(document)
+        result = flatten(document)
+        # Missing files are now silently skipped, not raised as errors
+        assert "line 0" in result
+        assert "line 2" in result
 
     def test_missing_subimport_file(self):
-        """Test that missing subimport files raise appropriate errors."""
+        """Test that missing subimport files are silently skipped."""
         document = {
             "main.tex": "line 0\n\\subimport{dir}{missing}\nline 2\n",
         }
-        with pytest.raises((KeyError, RuntimeError)):
-            flatten(document)
+        result = flatten(document)
+        # Missing files are now silently skipped, not raised as errors
+        assert "line 0" in result
+        assert "line 2" in result
 
 
 class TestCircularDependencies:

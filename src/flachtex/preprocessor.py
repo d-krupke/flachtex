@@ -62,8 +62,7 @@ class Preprocessor:
         """
         content = TraceableString(self.file_finder.read(file_path), origin=file_path)
         content = apply_skip_rules(content, self.skip_rules)
-        content = apply_substitution_rules(content, self.substitution_rules)
-        return content
+        return apply_substitution_rules(content, self.substitution_rules)
 
     def include_path(
         self, content: TraceableString, subimport_path: str | None
@@ -83,10 +82,9 @@ class Preprocessor:
         """
         if subimport_path is None or subimport_path == "":
             return content
-        content = apply_subimport_substitution_rules(
+        return apply_subimport_substitution_rules(
             content, self.subimport_rules, subimport_path
         )
-        return content
 
     def find_imports(self, content: TraceableString) -> list[Import]:
         """
@@ -101,8 +99,7 @@ class Preprocessor:
         Returns:
             List of all found imports
         """
-        imports = find_imports(content, self.import_rules)
-        return imports
+        return find_imports(content, self.import_rules)
 
     def _add_structure(self, path: str, included_files: list[str]) -> None:
         """
@@ -158,24 +155,32 @@ class Preprocessor:
 
         # Replace each import with its expanded content
         for match in imports:
-            insertion_file = self.file_finder.find_best_matching_path(
-                match.path, origin=file_path
-            )
-            insertion = self.expand_file(
-                insertion_file,
-                _cycle_prevention,
-                match.is_subimport,
-                match.subimport_path,
-            )
-            content = (
-                content[: match.start + offset]
-                + insertion
-                + content[match.end + offset :]
-            )
-            offset += len(insertion) - len(match)
+            try:
+                insertion_file = self.file_finder.find_best_matching_path(
+                    match.path, origin=file_path
+                )
+                insertion = self.expand_file(
+                    insertion_file,
+                    _cycle_prevention,
+                    match.is_subimport,
+                    match.subimport_path,
+                )
+                content = (
+                    content[: match.start + offset]
+                    + insertion
+                    + content[match.end + offset :]
+                )
+                offset += len(insertion) - len(match)
+            except KeyError:
+                pass  # Allow non-existent includes to be skipped
 
         # Apply subimport path adjustments if this was a subimport
         if is_subimport:
+            if not subimport_path:
+                msg = "Subimport path must be provided for subimports."
+                raise ValueError(
+                    msg
+                )
             content = self.include_path(content, subimport_path)
 
         _cycle_prevention.pop()

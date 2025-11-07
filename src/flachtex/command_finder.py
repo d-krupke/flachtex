@@ -81,8 +81,17 @@ class LatexStream:
             return None
         if not self.has_next():
             return None
-        c = self._text[self._pos]
-        return c
+        return self._text[self._pos]
+    
+    def _peek_is_space(self) -> bool:
+        """
+        Check if the next character is a whitespace character.
+        :return: True if the next character is a whitespace character.
+        """
+        peek = self.peek()
+        if peek is None:
+            return False
+        return peek.isspace()
 
     def has_next(self) -> bool:
         """
@@ -103,7 +112,7 @@ class LatexStream:
         Skips over all whitespace characters and comments.
         :return: None
         """
-        while self.in_comment or (self.peek().isspace() and not self.is_escaped):
+        while self.in_comment or (self._peek_is_space() and not self.is_escaped):
             self.next()
 
     def __iter__(self):
@@ -140,7 +149,7 @@ class CommandMatch:
     def __repr__(self):
         return (
             f"{self.start}:{self.end} \\{self.command}"
-             "["
+            "["
             + "".join(f"{p[0]}:{p[1]}" if p else "None" for p in self.opt_parameters)
             + "]"
             + "".join("{" + str(p[0]) + ":" + str(p[1]) + "}" for p in self.parameters)

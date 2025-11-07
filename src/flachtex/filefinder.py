@@ -28,39 +28,41 @@ class FileSystem:
     dictionary for testing purposes.
     """
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, path: str) -> bool:
         """
         Check if a file exists on the file system.
 
         Args:
-            item: Path to check
+            path: Path to check
 
         Returns:
             True if the path exists and is a file
         """
-        return os.path.exists(item) and os.path.isfile(item)
+        return Path(path).is_file()
 
-    def __getitem__(self, item: str) -> str:
+    def __getitem__(self, path: str) -> str:
         """
         Read and return the contents of a file.
 
         Args:
-            item: Path to the file to read
+            path: Path to the file to read
 
         Returns:
             The file contents as a string
 
         Raises:
-            KeyError: If the file does not exist
+            FileNotFoundError: If the file does not exist
+            OSError: If the file cannot be read
         """
-        if item not in self:
-            msg = f"Could not find {item}."
-            raise KeyError(msg)
-        with Path(item).open(errors="ignore") as f:
-            try:
-                return str(f.read())
-            except Exception as e:
-                return f"\n%ERROR (flachtex): Could not read '{item}': '{e}'\n"
+        file_path = Path(path)
+        if not file_path.is_file():
+            msg = f"Could not find '{path}'"
+            raise FileNotFoundError(msg)
+        try:
+            return file_path.read_text(errors="ignore")
+        except Exception as exc:
+            msg = f"Error reading '{path}': {exc!s}"
+            raise OSError(msg) from exc
 
 
 class FileFinder:
@@ -164,19 +166,15 @@ class FileFinder:
 
         # Walk upwards from the origin file directory
         while d != self._project_root:
-            parent_d = os.path.dirname(d)
-
-            # If parent_d == d, we've reached the filesystem root (e.g., "/" on Unix)
-            # os.path.dirname("/") returns "/", which would cause an infinite loop
-            # Yield the final paths and break to avoid the loop
-            if parent_d == d:
-                yield self._normalize(os.path.join(d, path))
-                yield self._normalize(os.path.join(d, path)) + ".tex"
-                break
-
             yield self._normalize(os.path.join(d, path))
             yield self._normalize(os.path.join(d, path)) + ".tex"
-            d = parent_d
+
+            # Check if we've reached the filesystem root to prevent infinite loop
+            # os.path.dirname("/") returns "/", so we need to detect this
+            d_ = os.path.dirname(d)
+            if d_ == d:
+                break
+            d = d_  # go one directory above
 
     def read(self, path: str) -> str:
         """
