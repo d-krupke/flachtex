@@ -176,17 +176,22 @@ def flatten_paper(base_dir: Path, main_file: str = "main.tex") -> str:
 # Use None for expected_main_file to auto-detect
 ARXIV_PAPERS = [
     # Classic deep learning paper
-    ("1505.03116", "https://arxiv.org/e-print/1505.03116", None),
+    ("1505.03116", "https://arxiv.org/e-print/1505.03116", "main.tex"),
     # Another paper with different structure (if network allows)
-    # ("1706.03762", "https://arxiv.org/e-print/1706.03762", None),  # Attention is All You Need
-    # ("1409.1556", "https://arxiv.org/e-print/1409.1556", None),  # VGG
+    ("2203.07444", "https://arxiv.org/e-print/2203.07444", "survey.tex"),
+    ("2103.14599", "https://arxiv.org/e-print/2103.14599", "main.tex"),
+    ("2204.10836", "https://arxiv.org/e-print/2204.10836", "main.tex"),
     # Add more papers here as needed
 ]
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("arxiv_id,url,main_file", ARXIV_PAPERS)
-def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str, tmp_path: Path):
+@pytest.mark.parametrize(
+    ("arxiv_id", "url", "main_file"),
+    ARXIV_PAPERS,
+    ids=[paper[0] for paper in ARXIV_PAPERS]
+)
+def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str):
     """
     Test that flachtex can successfully flatten real arxiv papers.
 
@@ -198,7 +203,6 @@ def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str, tmp_pat
         arxiv_id: The arxiv paper ID
         url: The arxiv e-print URL
         main_file: Name of the main tex file
-        tmp_path: Pytest fixture providing a temporary directory
     """
     # Use a cache directory in the tests folder to persist downloads
     cache_dir = Path(__file__).parent / ".arxiv_cache"
@@ -232,7 +236,7 @@ def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str, tmp_pat
         pytest.fail(f"Failed to flatten arxiv paper {arxiv_id}: {e!s}")
 
 
-def test_arxiv_custom_urls(tmp_path: Path):
+def test_arxiv_custom_urls():
     """
     Example test that can be customized with additional arxiv URLs.
 
