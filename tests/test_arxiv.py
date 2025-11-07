@@ -29,7 +29,6 @@ These are integration tests requiring network access. Some environments may bloc
 arxiv downloads or apply rate limiting, in which case the tests will be skipped.
 """
 
-import shutil
 import tarfile
 import urllib.error
 import urllib.request
@@ -189,7 +188,7 @@ ARXIV_PAPERS = [
 @pytest.mark.parametrize(
     ("arxiv_id", "url", "main_file"),
     ARXIV_PAPERS,
-    ids=[paper[0] for paper in ARXIV_PAPERS]
+    ids=[paper[0] for paper in ARXIV_PAPERS],
 )
 def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str):
     """
@@ -228,9 +227,9 @@ def test_arxiv_paper_flattening(arxiv_id: str, url: str, main_file: str):
 
         # Check that we have some LaTeX content
         # Most papers should have at least a documentclass or begin{document}
-        assert (
-            "\\documentclass" in flattened or "\\begin{document}" in flattened
-        ), "Flattened content should contain LaTeX document structure"
+        assert "\\documentclass" in flattened or "\\begin{document}" in flattened, (
+            "Flattened content should contain LaTeX document structure"
+        )
 
     except Exception as e:
         pytest.fail(f"Failed to flatten arxiv paper {arxiv_id}: {e!s}")

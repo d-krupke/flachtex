@@ -453,9 +453,7 @@ class TestCommentPackageEdgeCases:
 
     def test_comment_block_with_special_chars(self):
         """Test comment blocks containing special characters."""
-        document = {
-            "main.tex": "0\n\\begin{comment}\n$ % & # { }\n\\end{comment}\n2\n"
-        }
+        document = {"main.tex": "0\n\\begin{comment}\n$ % & # { }\n\\end{comment}\n2\n"}
         result = flatten(document, comments=True)
         assert "0" in result
         assert "2" in result

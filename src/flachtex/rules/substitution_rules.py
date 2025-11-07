@@ -13,9 +13,7 @@ from flachtex.utils import Range
 
 
 class Substitution(Range):
-    def __init__(
-        self, start: int, end: int, replacement_text: TraceableString | None
-    ):
+    def __init__(self, start: int, end: int, replacement_text: TraceableString | None):
         super().__init__(start, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
         self.replacement_text = replacement_text

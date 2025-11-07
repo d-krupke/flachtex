@@ -7,7 +7,6 @@ but otherwise should be safe.
 """
 
 import logging
-import typing
 
 _logger = logging.getLogger(__file__)
 
@@ -82,7 +81,7 @@ class LatexStream:
         if not self.has_next():
             return None
         return self._text[self._pos]
-    
+
     def _peek_is_space(self) -> bool:
         """
         Check if the next character is a whitespace character.

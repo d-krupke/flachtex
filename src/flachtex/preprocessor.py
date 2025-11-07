@@ -180,9 +180,7 @@ class Preprocessor:
         if is_subimport:
             if not subimport_path:
                 msg = "Subimport path must be provided for subimports."
-                raise ValueError(
-                    msg
-                )
+                raise ValueError(msg)
             content = self.include_path(content, subimport_path)
 
         _cycle_prevention.pop()

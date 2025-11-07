@@ -5,12 +5,10 @@ This test suite covers different rules (skip rules, substitution rules,
 import rules) and their interactions.
 """
 
-import pytest
 
 from flachtex import FileFinder, Preprocessor, remove_comments
 from flachtex.rules import (
     ChangesRule,
-    CommentsPackageSkipRule,
     SubimportChangesRule,
     TodonotesRule,
 )
@@ -139,11 +137,7 @@ class TestTodonotesRule:
         """Test todonotes removal across included files."""
         document = {
             "main.tex": "start\n\\input{content.tex}\nend\n",
-            "content.tex": (
-                "content\n"
-                "\\todo{Fix this}\n"
-                "more content\n"
-            ),
+            "content.tex": ("content\n\\todo{Fix this}\nmore content\n"),
         }
         result = flatten(document, rules_config={"skip_rules": [TodonotesRule()]})
         assert "start" in result
@@ -247,11 +241,7 @@ class TestChangesRule:
 
     def test_changes_with_prefix(self):
         """Test changes package with prefix option."""
-        document = {
-            "main.tex": (
-                "Text with \\added{new content}.\n"
-            )
-        }
+        document = {"main.tex": ("Text with \\added{new content}.\n")}
         result = flatten(
             document, rules_config={"substitution_rules": [ChangesRule(True)]}
         )
@@ -295,13 +285,10 @@ class TestSubimportChangesRule:
                 "\\end{document}\n"
             ),
             "chapter1/main.tex": (
-                "\\chapter{Chapter 1}\n"
-                "\\subimport{figures/}{fig1}\n"
+                "\\chapter{Chapter 1}\n\\subimport{figures/}{fig1}\n"
             ),
             "chapter1/figures/fig1.tex": (
-                "\\begin{figure}\n"
-                "\\includegraphics{plot.pdf}\n"
-                "\\end{figure}\n"
+                "\\begin{figure}\n\\includegraphics{plot.pdf}\n\\end{figure}\n"
             ),
         }
         result = flatten(
@@ -371,11 +358,7 @@ class TestRuleCombinations:
     def test_subimport_with_skip_rules(self):
         """Test subimport combined with skip rules."""
         document = {
-            "main.tex": (
-                "start\n"
-                "\\subimport{sub/}{content}\n"
-                "end\n"
-            ),
+            "main.tex": ("start\n\\subimport{sub/}{content}\nend\n"),
             "sub/content.tex": (
                 "visible\n"
                 "%%FLACHTEX-SKIP-START\n"
@@ -492,15 +475,9 @@ class TestCustomRuleInteractions:
     def test_rules_with_empty_results(self):
         """Test rules that result in empty content."""
         document = {
-            "main.tex": (
-                "start\n"
-                "\\input{all_skipped.tex}\n"
-                "end\n"
-            ),
+            "main.tex": ("start\n\\input{all_skipped.tex}\nend\n"),
             "all_skipped.tex": (
-                "%%FLACHTEX-SKIP-START\n"
-                "everything is skipped\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-SKIP-START\neverything is skipped\n%%FLACHTEX-SKIP-STOP\n"
             ),
         }
         result = flatten(document)

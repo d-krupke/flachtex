@@ -5,7 +5,6 @@ This test suite covers realistic academic paper and book structures
 with multiple chapters, sections, figures, and bibliographies.
 """
 
-import pytest
 
 from flachtex import FileFinder, Preprocessor
 from flachtex.rules import SubimportChangesRule
@@ -232,16 +231,12 @@ class TestMultiFileOrganization:
                 "\\end{document}\n"
             ),
             "chapter1/main.tex": (
-                "\\chapter{First}\n"
-                "\\input{intro.tex}\n"
-                "\\input{content.tex}\n"
+                "\\chapter{First}\n\\input{intro.tex}\n\\input{content.tex}\n"
             ),
             "chapter1/intro.tex": "\\section{Introduction}\nIntro 1\n",
             "chapter1/content.tex": "\\section{Content}\nContent 1\n",
             "chapter2/main.tex": (
-                "\\chapter{Second}\n"
-                "\\input{intro.tex}\n"
-                "\\input{content.tex}\n"
+                "\\chapter{Second}\n\\input{intro.tex}\n\\input{content.tex}\n"
             ),
             "chapter2/intro.tex": "\\section{Introduction}\nIntro 2\n",
             "chapter2/content.tex": "\\section{Content}\nContent 2\n",
@@ -332,8 +327,7 @@ class TestConditionalInclusion:
             ),
             "paper.tex": "\\section{Paper}\nPaper content\n",
             "supplementary/supplement.tex": (
-                "\\section{Supplementary}\n"
-                "\\input{details.tex}\n"
+                "\\section{Supplementary}\n\\input{details.tex}\n"
             ),
             "supplementary/details.tex": "\\subsection{Details}\nDetails\n",
         }
@@ -433,9 +427,7 @@ class TestMixedSubimportPatterns:
                 "\\end{document}\n"
             ),
             "chapters/chapter1.tex": (
-                "\\chapter{Chapter 1}\n"
-                "\\input{section1.tex}\n"
-                "\\input{section2.tex}\n"
+                "\\chapter{Chapter 1}\n\\input{section1.tex}\n\\input{section2.tex}\n"
             ),
             "chapters/section1.tex": "\\section{Section 1}\nS1\n",
             "chapters/section2.tex": "\\section{Section 2}\nS2\n",
@@ -455,15 +447,9 @@ class TestMixedSubimportPatterns:
                 "\\subimport{part2/}{main}\n"
                 "\\end{document}\n"
             ),
-            "part1/main.tex": (
-                "\\section{Part 1}\n"
-                "\\subimport{sub/}{content}\n"
-            ),
+            "part1/main.tex": ("\\section{Part 1}\n\\subimport{sub/}{content}\n"),
             "part1/sub/content.tex": "\\subsection{Part 1 Sub}\nContent 1\n",
-            "part2/main.tex": (
-                "\\section{Part 2}\n"
-                "\\subimport{sub/}{content}\n"
-            ),
+            "part2/main.tex": ("\\section{Part 2}\n\\subimport{sub/}{content}\n"),
             "part2/sub/content.tex": "\\subsection{Part 2 Sub}\nContent 2\n",
         }
         result = flatten(document)

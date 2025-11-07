@@ -37,7 +37,9 @@ class Range:
         # Check if one range's start lies within the other
         if self.start <= other.start < self.end:
             return True
-        return bool(other.start <= self.start < self.end and not other.end <= self.start)
+        return bool(
+            other.start <= self.start < self.end and not other.end <= self.start
+        )
 
     def __le__(self, other: Range) -> bool:
         """Compare ranges by their start position (less than or equal)."""

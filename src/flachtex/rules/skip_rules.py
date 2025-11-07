@@ -63,9 +63,7 @@ class BasicSkipRule(RegexSkipRule):
         )
 
     def determine_skip(self, match: re.Match):
-        return Range(
-            match.start("skipped_part"), match.end("skipped_part")
-        )
+        return Range(match.start("skipped_part"), match.end("skipped_part"))
 
 
 class CommentsPackageSkipRule(RegexSkipRule):
@@ -81,9 +79,7 @@ class CommentsPackageSkipRule(RegexSkipRule):
         )
 
     def determine_skip(self, match: re.Match):
-        return Range(
-            match.start("skipped_part"), match.end("skipped_part")
-        )
+        return Range(match.start("skipped_part"), match.end("skipped_part"))
 
 
 def _find_skips(
