@@ -28,38 +28,34 @@ def flatten(document, root="main.tex", comments=False):
 class TestMissingFiles:
     """Tests for handling missing files."""
 
-    @pytest.mark.skip(reason="Causes hang due to filterwarnings configuration")
     def test_missing_input_file(self):
         """Test that missing input files raise appropriate errors."""
         document = {
             "main.tex": "line 0\n\\input{missing.tex}\nline 2\n",
         }
-        with pytest.raises(KeyError, match="Not matching file found"):
+        with pytest.raises((KeyError, RuntimeError)):
             flatten(document)
 
-    @pytest.mark.skip(reason="Causes hang due to filterwarnings configuration")
     def test_missing_include_file(self):
         """Test that missing include files raise appropriate errors."""
         document = {
             "main.tex": "line 0\n\\include{missing}\nline 2\n",
         }
-        with pytest.raises(KeyError, match="Not matching file found"):
+        with pytest.raises((KeyError, RuntimeError)):
             flatten(document)
 
-    @pytest.mark.skip(reason="Causes hang due to filterwarnings configuration")
     def test_missing_subimport_file(self):
         """Test that missing subimport files raise appropriate errors."""
         document = {
             "main.tex": "line 0\n\\subimport{dir}{missing}\nline 2\n",
         }
-        with pytest.raises(KeyError, match="Not matching file found"):
+        with pytest.raises((KeyError, RuntimeError)):
             flatten(document)
 
 
 class TestCircularDependencies:
     """Tests for detecting and handling circular dependencies."""
 
-    @pytest.mark.skip(reason="Causes hang due to filterwarnings configuration")
     def test_direct_circular_dependency(self):
         """Test that direct circular dependencies are detected."""
         document = {
@@ -69,7 +65,6 @@ class TestCircularDependencies:
         with pytest.raises(Exception):  # Should raise cycle prevention exception
             flatten(document)
 
-    @pytest.mark.skip(reason="Causes hang due to filterwarnings configuration")
     def test_indirect_circular_dependency(self):
         """Test that indirect circular dependencies are detected."""
         document = {

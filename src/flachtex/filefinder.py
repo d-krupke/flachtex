@@ -136,7 +136,9 @@ class FileFinder:
         Get all possible file paths that will be checked.
 
         This method yields paths in order of priority, including variations
-        with and without the .tex extension.
+        with and without the .tex extension. It walks up the directory tree
+        from the origin file, stopping when it reaches the project root or
+        the filesystem root.
 
         Args:
             path: The requested file path
@@ -162,9 +164,19 @@ class FileFinder:
 
         # Walk upwards from the origin file directory
         while d != self._project_root:
+            parent_d = os.path.dirname(d)
+
+            # If parent_d == d, we've reached the filesystem root (e.g., "/" on Unix)
+            # os.path.dirname("/") returns "/", which would cause an infinite loop
+            # Yield the final paths and break to avoid the loop
+            if parent_d == d:
+                yield self._normalize(os.path.join(d, path))
+                yield self._normalize(os.path.join(d, path)) + ".tex"
+                break
+
             yield self._normalize(os.path.join(d, path))
             yield self._normalize(os.path.join(d, path)) + ".tex"
-            d = os.path.dirname(d)
+            d = parent_d
 
     def read(self, path: str) -> str:
         """

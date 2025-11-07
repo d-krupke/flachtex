@@ -27,7 +27,6 @@ class RegexSkipRule(SkipRule):
         self.regex = re.compile(regex, re.MULTILINE | re.DOTALL)
 
     def find_all(self, content) -> typing.Iterable[Range]:
-        print("FIND ALL!")
         for match in self.regex.finditer(content):
             yield self.determine_skip(match)
 
