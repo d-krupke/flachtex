@@ -8,7 +8,8 @@ from .preprocessor import Preprocessor
 from .rules import ChangesRule, SubimportChangesRule, TodonotesRule
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments for flachtex."""
     parser = argparse.ArgumentParser(
         description="flachtex: Traceable LaTeX flattening."
     )
@@ -39,14 +40,19 @@ def parse_arguments():
     return args
 
 
-def find_command_definitions(path) -> NewCommandSubstitution:
+def find_command_definitions(path: Path | str) -> NewCommandSubstitution:
     """
     Parse the document once independently to extract new commands.
-    :param path:
-    :return:
+
+    Args:
+        path: Path to the LaTeX file
+
+    Returns:
+        NewCommandSubstitution with all detected command definitions
     """
-    preprocessor = Preprocessor(str(Path(path).parent))
-    doc = preprocessor.expand_file(path)
+    path_obj = Path(path)
+    preprocessor = Preprocessor(str(path_obj.parent))
+    doc = preprocessor.expand_file(str(path_obj))
     cmds = find_new_commands(doc)
     ncs = NewCommandSubstitution()
     for cmd in cmds:
@@ -54,10 +60,11 @@ def find_command_definitions(path) -> NewCommandSubstitution:
     return ncs
 
 
-def main():
+def main() -> None:
+    """Main entry point for flachtex command-line interface."""
     args = parse_arguments()
-    file_path = args.path[0]
-    preprocessor = Preprocessor(str(Path(file_path).parent))
+    file_path = Path(args.path[0])
+    preprocessor = Preprocessor(str(file_path.parent))
     if args.todos:
         preprocessor.skip_rules.append(TodonotesRule())
     if args.changes:
@@ -65,7 +72,7 @@ def main():
     if args.newcommand:
         preprocessor.substitution_rules.append(find_command_definitions(file_path))
     preprocessor.subimport_rules.append(SubimportChangesRule())
-    doc = preprocessor.expand_file(file_path)
+    doc = preprocessor.expand_file(str(file_path))
 
     if args.comments:
         doc = remove_comments(doc)

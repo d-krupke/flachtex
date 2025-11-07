@@ -75,7 +75,7 @@ class FileFinder:
 
     def __init__(
         self,
-        project_root: str = ".",
+        project_root: Path | str = ".",
         file_system: FileSystemProtocol | dict[str, str] | None = None,
     ) -> None:
         """
@@ -89,19 +89,20 @@ class FileFinder:
         if file_system is None:
             file_system = FileSystem()
         self.file_system: FileSystemProtocol | dict[str, str] = file_system
-        self._PATH = [project_root]
-        self._project_root = project_root
+        root_str = str(project_root)
+        self._PATH = [root_str]
+        self._project_root = root_str
 
-    def set_root(self, project_root: str) -> None:
+    def set_root(self, project_root: Path | str) -> None:
         """
         Set a new project root directory.
 
         Args:
             project_root: The new root directory path
         """
-        self._PATH = [project_root]
+        self._PATH = [str(project_root)]
 
-    def find_best_matching_path(self, path: str, origin: str) -> str:
+    def find_best_matching_path(self, path: Path | str, origin: Path | str) -> str:
         """
         Find the best matching file path from multiple search locations.
 
@@ -121,10 +122,12 @@ class FileFinder:
         Raises:
             KeyError: If no matching file is found in any location
         """
-        for p in self.get_checked_paths(path, origin):
+        path_str = str(path)
+        origin_str = str(origin)
+        for p in self.get_checked_paths(path_str, origin_str):
             if p in self.file_system:
                 return p
-        checked = list(self.get_checked_paths(path, origin))
+        checked = list(self.get_checked_paths(path_str, origin_str))
         msg = f"Not matching file found. Tried: {', '.join(checked)}"
         raise KeyError(msg)
 
@@ -132,7 +135,7 @@ class FileFinder:
         """Normalize a file path."""
         return str(Path(path))
 
-    def get_checked_paths(self, path: str, origin: str) -> Iterable[str]:
+    def get_checked_paths(self, path: Path | str, origin: Path | str) -> Iterable[str]:
         """
         Get all possible file paths that will be checked.
 
@@ -148,7 +151,7 @@ class FileFinder:
         Yields:
             Possible file paths to check, in priority order
         """
-        path_obj = Path(path)
+        path_obj = Path(path) if isinstance(path, str) else path
 
         # If it is an absolute path, try this one first
         if path_obj.is_absolute():
@@ -156,7 +159,8 @@ class FileFinder:
             yield str(path_obj) + ".tex"
 
         # Try relative to the origin file's directory
-        origin_dir = Path(origin).parent
+        origin_obj = Path(origin) if isinstance(origin, str) else origin
+        origin_dir = origin_obj.parent
         d = str(origin_dir)
         yield self._normalize(str(origin_dir / path))
         yield self._normalize(str(origin_dir / path)) + ".tex"
@@ -181,7 +185,7 @@ class FileFinder:
                 break
             d = d_  # go one directory above
 
-    def read(self, path: str) -> str:
+    def read(self, path: Path | str) -> str:
         """
         Read and return the contents of a file.
 
@@ -191,4 +195,4 @@ class FileFinder:
         Returns:
             The file contents as a string
         """
-        return self.file_system[self._normalize(path)]
+        return self.file_system[self._normalize(str(path))]

@@ -86,15 +86,18 @@ class CommentsPackageSkipRule(RegexSkipRule):
         )
 
 
-def _find_skips(content, skip_rules):
-    content = str(content)
-    skips = []
+def _find_skips(
+    content: TraceableString, skip_rules: typing.Iterable[SkipRule]
+) -> list[Range]:
+    """Find all ranges to skip based on skip rules."""
+    content_str = str(content)
+    skips: list[Range] = []
     for rule in skip_rules:
-        skips += list(rule.find_all(content))
+        skips += list(rule.find_all(content_str))
     return skips
 
 
-def _sort_and_check_ranges(skips) -> typing.Iterable[Range]:
+def _sort_and_check_ranges(skips: list[Range]) -> list[Range]:
     skips.sort()
     for i, e in enumerate(skips[:-1]):
         if e.intersects(skips[i + 1]):

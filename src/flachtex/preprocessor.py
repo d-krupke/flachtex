@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from .cycle_prevention import CyclePrevention
@@ -35,7 +36,7 @@ class Preprocessor:
     6. Handling subimport path adjustments
     """
 
-    def __init__(self, project_root: str) -> None:
+    def __init__(self, project_root: Path | str) -> None:
         """
         Initialize the preprocessor.
 
@@ -50,7 +51,7 @@ class Preprocessor:
         self.file_finder = FileFinder(project_root)
         self.structure: dict[str, dict[str, Any]] = {}
 
-    def read_file(self, file_path: str) -> TraceableString:
+    def read_file(self, file_path: Path | str) -> TraceableString:
         """
         Read a file and apply skip and substitution rules.
 
@@ -116,7 +117,7 @@ class Preprocessor:
 
     def expand_file(
         self,
-        file_path: str,
+        file_path: Path | str,
         _cycle_prevention: CyclePrevention | None = None,
         is_subimport: bool = False,
         subimport_path: str | None = None,
@@ -147,17 +148,18 @@ class Preprocessor:
         if _cycle_prevention is None:
             _cycle_prevention = CyclePrevention()
 
+        file_path_str = str(file_path)
         offset = 0
-        _cycle_prevention.push(file_path, context=file_path)
-        content = self.read_file(file_path)
+        _cycle_prevention.push(file_path_str, context=file_path_str)
+        content = self.read_file(file_path_str)
         imports = self.find_imports(content)
-        self._add_structure(file_path, [import_.path for import_ in imports])
+        self._add_structure(file_path_str, [import_.path for import_ in imports])
 
         # Replace each import with its expanded content
         for match in imports:
             try:
                 insertion_file = self.file_finder.find_best_matching_path(
-                    match.path, origin=file_path
+                    match.path, origin=file_path_str
                 )
                 insertion = self.expand_file(
                     insertion_file,
