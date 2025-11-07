@@ -99,7 +99,7 @@ class NewCommandSubstitution(SubstitutionRule):
         self._command_finder.add_command(name, definition.num_parameters)
 
     def _get_substitution(
-        self, command: TraceableString, parameters: typing.List[TraceableString]
+        self, command: TraceableString, parameters: list[TraceableString]
     ) -> TraceableString:
         for i, p in enumerate(parameters):
             i += 1

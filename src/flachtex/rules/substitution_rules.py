@@ -14,7 +14,7 @@ from flachtex.utils import Range
 
 class Substitution(Range):
     def __init__(
-        self, start: int, end: int, replacement_text: typing.Optional[TraceableString]
+        self, start: int, end: int, replacement_text: TraceableString | None
     ):
         super().__init__(start, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
@@ -65,7 +65,7 @@ class ChangesRule(SubstitutionRule):
 
 
 def _sort_replacements(
-    replacements: typing.List[Substitution],
+    replacements: list[Substitution],
 ) -> typing.Iterable[Substitution]:
     replacements.sort()
     if len(replacements) <= 1:
@@ -79,8 +79,8 @@ def _sort_replacements(
 
 
 def _find_substitutions(
-    content: TraceableString, replacement_rules: typing.List[SubstitutionRule]
-) -> typing.List[Substitution]:
+    content: TraceableString, replacement_rules: list[SubstitutionRule]
+) -> list[Substitution]:
     replacements = []
     for rule in replacement_rules:
         replacements += list(rule.find_all(content))
@@ -89,7 +89,7 @@ def _find_substitutions(
 
 def apply_substitution_rules(
     content: TraceableString,
-    replacement_rules: typing.List[SubstitutionRule],
+    replacement_rules: list[SubstitutionRule],
 ):
     replacements = _find_substitutions(content, replacement_rules)
     max_itererations = 10

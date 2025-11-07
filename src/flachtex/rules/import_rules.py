@@ -1,7 +1,7 @@
 import abc
-import os
 import re
 import typing
+from pathlib import Path
 
 from flachtex.command_finder import CommandFinder
 from flachtex.traceable_string import TraceableString
@@ -78,8 +78,8 @@ class SubimportRule(RegexImportRule):
         # This function implements the functionality for the subimports library.
         # The import is separated into two parts
         subimport_path = match.group("dir").strip()
-        import_path = os.path.join(
-            match.group("dir").strip(), match.group("file").strip()
+        import_path = str(
+            Path(match.group("dir").strip()) / match.group("file").strip()
         )
         return Import(
             match.start("command"),
@@ -106,7 +106,7 @@ class ExplicitImportRule(RegexImportRule):
         )
 
 
-def _sort_imports(imports: typing.List[Import]) -> typing.List[Import]:
+def _sort_imports(imports: list[Import]) -> list[Import]:
     imports.sort()
     for i, e in enumerate(imports[:-1]):
         if e.intersects(imports[i + 1]):
@@ -117,7 +117,7 @@ def _sort_imports(imports: typing.List[Import]) -> typing.List[Import]:
 
 def find_imports(
     content: TraceableString, include_rules: typing.Iterable[ImportRule]
-) -> typing.List[Import]:
+) -> list[Import]:
     content_ = str(content)
     imports = []
     for rule in include_rules:

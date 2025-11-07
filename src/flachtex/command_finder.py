@@ -71,7 +71,7 @@ class LatexStream:
             except _ParserError:
                 break
 
-    def peek(self, pure=False) -> typing.Optional[str]:
+    def peek(self, pure=False) -> str | None:
         """
         Return the current character. Do not move the cursor.
         :param pure: Only return characters that are not in a comment or escaped.
@@ -137,8 +137,8 @@ class CommandMatch:
         command: str,
         start: int,
         end: int,
-        parameters: typing.List[typing.Tuple[int, int]],
-        opt_parameters: typing.List[typing.Optional[typing.Tuple[int, int]]],
+        parameters: list[tuple[int, int]],
+        opt_parameters: list[tuple[int, int] | None],
     ):
         self.command = command  # command name
         self.start = start  # position of the start of the command
@@ -256,7 +256,7 @@ class CommandFinder:
         definition = self._read_parameter(stream, "{", "}", mandatory=True)
         return opt_params, [command_name, definition]
 
-    def find(self, text: str, begin: int = 0) -> typing.Optional[CommandMatch]:
+    def find(self, text: str, begin: int = 0) -> CommandMatch | None:
         """
         Find first occurrence of a command in the text.
         :param text: The text to be searched.

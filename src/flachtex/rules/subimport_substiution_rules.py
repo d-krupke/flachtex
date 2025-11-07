@@ -14,7 +14,7 @@ from flachtex.utils import Range
 
 class SubimportSubstitution(Range):
     def __init__(
-        self, start: int, end: int, replacement_text: typing.Optional[TraceableString]
+        self, start: int, end: int, replacement_text: TraceableString | None
     ):
         super().__init__(start, end)
         assert not replacement_text or isinstance(replacement_text, TraceableString)
@@ -119,7 +119,7 @@ class SubimportChangesRule(SubimportSubstitutionRule):
 
 
 def _sort_subimport_replacements(
-    replacements: typing.List[SubimportSubstitution],
+    replacements: list[SubimportSubstitution],
 ) -> typing.Iterable[SubimportSubstitution]:
     replacements.sort()
     if len(replacements) <= 1:
@@ -134,9 +134,9 @@ def _sort_subimport_replacements(
 
 def _find_subimport_substitutions(
     content: TraceableString,
-    replacement_rules: typing.List[SubimportSubstitutionRule],
+    replacement_rules: list[SubimportSubstitutionRule],
     subimport_path,
-) -> typing.List[SubimportSubstitution]:
+) -> list[SubimportSubstitution]:
     replacements = []
     for rule in replacement_rules:
         replacements += list(rule.find_all(content, subimport_path))
@@ -145,7 +145,7 @@ def _find_subimport_substitutions(
 
 def apply_subimport_substitution_rules(
     content: TraceableString,
-    replacement_rules: typing.List[SubimportSubstitutionRule],
+    replacement_rules: list[SubimportSubstitutionRule],
     subimport_path,
 ):
     replacements = _find_subimport_substitutions(

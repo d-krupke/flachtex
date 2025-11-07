@@ -1,6 +1,6 @@
 import argparse
 import json
-import os
+from pathlib import Path
 
 from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
@@ -45,7 +45,7 @@ def find_command_definitions(path) -> NewCommandSubstitution:
     :param path:
     :return:
     """
-    preprocessor = Preprocessor(os.path.dirname(path))
+    preprocessor = Preprocessor(str(Path(path).parent))
     doc = preprocessor.expand_file(path)
     cmds = find_new_commands(doc)
     ncs = NewCommandSubstitution()
@@ -57,7 +57,7 @@ def find_command_definitions(path) -> NewCommandSubstitution:
 def main():
     args = parse_arguments()
     file_path = args.path[0]
-    preprocessor = Preprocessor(os.path.dirname(file_path))
+    preprocessor = Preprocessor(str(Path(file_path).parent))
     if args.todos:
         preprocessor.skip_rules.append(TodonotesRule())
     if args.changes:

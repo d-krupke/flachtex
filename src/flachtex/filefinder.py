@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os.path
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Protocol
@@ -131,7 +130,7 @@ class FileFinder:
 
     def _normalize(self, path: str) -> str:
         """Normalize a file path."""
-        return os.path.normpath(path)
+        return str(Path(path))
 
     def get_checked_paths(self, path: str, origin: str) -> Iterable[str]:
         """
@@ -149,29 +148,35 @@ class FileFinder:
         Yields:
             Possible file paths to check, in priority order
         """
+        path_obj = Path(path)
+
         # If it is an absolute path, try this one first
-        if os.path.isabs(path):
-            yield os.path.normpath(path)
-            yield os.path.normpath(path) + ".tex"
+        if path_obj.is_absolute():
+            yield str(path_obj)
+            yield str(path_obj) + ".tex"
 
         # Try relative to the origin file's directory
-        d = os.path.dirname(origin)
-        yield self._normalize(os.path.join(d, path))
-        yield self._normalize(os.path.join(d, path)) + ".tex"
+        origin_dir = Path(origin).parent
+        d = str(origin_dir)
+        yield self._normalize(str(origin_dir / path))
+        yield self._normalize(str(origin_dir / path)) + ".tex"
 
         # Try include directories
         for include in self._PATH:
-            yield self._normalize(os.path.join(include, path))
-            yield self._normalize(os.path.join(include, path)) + ".tex"
+            include_path = Path(include)
+            yield self._normalize(str(include_path / path))
+            yield self._normalize(str(include_path / path)) + ".tex"
 
         # Walk upwards from the origin file directory
         while d != self._project_root:
-            yield self._normalize(os.path.join(d, path))
-            yield self._normalize(os.path.join(d, path)) + ".tex"
+            current_dir = Path(d)
+            yield self._normalize(str(current_dir / path))
+            yield self._normalize(str(current_dir / path)) + ".tex"
 
             # Check if we've reached the filesystem root to prevent infinite loop
-            # os.path.dirname("/") returns "/", so we need to detect this
-            d_ = os.path.dirname(d)
+            # Path("/").parent returns Path("/"), so we need to detect this
+            parent_dir = current_dir.parent
+            d_ = str(parent_dir)
             if d_ == d:
                 break
             d = d_  # go one directory above
