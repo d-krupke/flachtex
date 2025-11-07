@@ -123,9 +123,14 @@ def download_arxiv_paper(
                 "User-Agent": "Mozilla/5.0 (compatible; flachtex-test/1.0; +https://github.com/d-krupke/flachtex)"
             },
         )
-        with urllib.request.urlopen(req) as response:
+        response = None
+        try:
+            response = urllib.request.urlopen(req)
             with open(path_tar, "wb") as out_file:
                 out_file.write(response.read())
+        finally:
+            if response is not None:
+                response.close()
 
         # Verify it's a valid tarfile
         if not tarfile.is_tarfile(path_tar):

@@ -48,7 +48,11 @@ flachtex = ["py.typed"]
 minversion = "6.0"
 addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
 xfail_strict = true
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # Ignore SSL socket warnings from arxiv downloads
+    "ignore:Exception ignored in.*ssl.SSLSocket:pytest.PytestUnraisableExceptionWarning",
+]
 log_cli_level = "info"
 testpaths = ["tests"]
 markers = [

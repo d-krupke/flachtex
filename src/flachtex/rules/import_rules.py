@@ -3,6 +3,7 @@ import os
 import re
 import typing
 
+from flachtex.command_finder import CommandFinder
 from flachtex.traceable_string import TraceableString
 from flachtex.utils import Range
 
@@ -41,20 +42,25 @@ class RegexImportRule(ImportRule):
             yield self.determine_include(match)
 
 
-class NativeImportRule(RegexImportRule):
+class NativeImportRule(ImportRule):
     """
     Detects includes of the form `\\input{/path/file.tex}` and `\\include{/path/file.tex}`
+
+    Uses CommandFinder instead of regex to properly handle multiple commands on the same line
+    and correctly handle comments and escaping.
     """
 
     def __init__(self):
-        expr = r"^(([^%\n])|(\\%))*(?P<command>((\\input)|(\\include))\{(?P<path>[^}]*?)\})"
-        super().__init__(expr)
+        self.finder = CommandFinder()
+        self.finder.add_command("input", num_params=1)
+        self.finder.add_command("include", num_params=1)
 
-    def determine_include(self, match: re.Match):
-        import_path = match.group("path").strip()
-        return Import(
-            match.start("command"), match.end("command"), import_path, False, None
-        )
+    def find_all(self, content: str) -> typing.Iterable[Import]:
+        for match in self.finder.find_all(content):
+            if match.parameters:
+                path_start, path_end = match.parameters[0]
+                import_path = content[path_start:path_end].strip()
+                yield Import(match.start, match.end, import_path, False, None)
 
 
 class SubimportRule(RegexImportRule):
