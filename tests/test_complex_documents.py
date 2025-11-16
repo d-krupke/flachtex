@@ -5,7 +5,6 @@ This test suite covers realistic academic paper and book structures
 with multiple chapters, sections, figures, and bibliographies.
 """
 
-
 from flachtex import FileFinder, Preprocessor, remove_comments
 from flachtex.rules import SubimportChangesRule
 

@@ -17,6 +17,7 @@ Notable features of _flachtex_ are:
 - Flattening of LaTeX-documents with various rules (`\include`, `\input`,
   `\subimport` ,`%%FLACHTEX-EXPLICIT-IMPORT[path/to/file]`...).
 - Any character in the output can be traced back to its origin.
+- **Diff-friendly formatter** for version control (one sentence per line, environment indentation).
 - Remove comments.
 - Remove `\todo{...}`.
 - Remove highlights of `\usepackage{changes}`. (This substitution is actually
@@ -120,7 +121,8 @@ _flachtex_ comes with a simple CLI, if you don't want to use it via Python.
 
 ```
 usage: flachtex [-h] [--to_json] [--comments] [--attach] [--changes]
-              [--changes_prefix] [--todos] [--newcommand]
+              [--changes_prefix] [--todos] [--newcommand] [--format]
+              [--indent N] [--no-expand]
               path
 
 flachtex: Traceable LaTeX flattening.
@@ -137,7 +139,25 @@ options:
   --changes_prefix  Use the prefix option in changes.
   --todos           Remove todo-notes.
   --newcommand      Automatically substitute custom commands.
+  --format          Format output with one sentence per line for diff-friendly results.
+  --indent N        Indent environments with N spaces (default: 0, disabled). Use with --format.
+  --no-expand       Don't expand \input and \include commands (only format the main file).
 ```
+
+**Quick Examples:**
+
+```bash
+# Flatten and format for version control
+flachtex --format --indent 2 main.tex > output.tex
+
+# Format without flattening (keep \input commands)
+flachtex --no-expand --format --indent 2 main.tex > output.tex
+
+# Full pipeline: flatten, remove comments, format
+flachtex --comments --format --indent 2 main.tex > output.tex
+```
+
+See [docs/formatter.md](docs/formatter.md) for complete formatter documentation.
 
 ### Python
 
@@ -173,6 +193,43 @@ print(f"The sixth character  origins from file {origin_file}:{pos}.")
 ```
 
 ## Features
+
+### Diff-Friendly Formatter
+
+_flachtex_ includes an optional formatter that makes LaTeX documents more suitable for version control:
+
+**One sentence per line:**
+- Splits text at sentence boundaries (periods, question marks, exclamation marks)
+- Intelligently handles abbreviations (Dr., et al., i.e., etc.)
+- Preserves decimal numbers (3.14)
+- Keeps comments with their sentences
+
+**Environment indentation:**
+- Configurable indentation (default: 2 spaces)
+- Progressive indentation for nested environments
+- Excludes verbatim-like environments (verbatim, lstlisting, minted)
+- Document-level environments (document, abstract) don't cause indentation
+
+**Blank line normalization:**
+- Reduces excessive blank lines (3+) to one blank line
+- Removes leading/trailing blank lines
+- Preserves paragraph structure
+
+**Two main use cases:**
+
+1. **Format only** (without flattening):
+   ```bash
+   flachtex --no-expand --format --indent 2 main.tex
+   ```
+   Keeps `\input` commands intact, formats a single file.
+
+2. **Full pipeline** (flattening + formatting):
+   ```bash
+   flachtex --format --indent 2 main.tex
+   ```
+   Expands all includes, then formats the result.
+
+See [docs/formatter.md](docs/formatter.md) for detailed documentation.
 
 ### Flatten LaTeX-documents
 
@@ -241,6 +298,7 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.7.0** Adding formatter
 - **0.6.0** Significant refactoring.
 - **0.5.0** Now will only replace `\input` and `\include` commands for which the
   file exists. Otherwise, it will leave the command as is. This allows you to

@@ -75,7 +75,6 @@ class OriginOfRange:
         )
 
 
-
 class TraceableString:
     def __init__(self, content: str, origin: typing.Any, offset: int = 0):
         self.content = content
@@ -173,7 +172,6 @@ class TraceableString:
         if not isinstance(other, TraceableString):
             return False
         return self.content == other.content and self.origins == other.origins
-
 
     def __repr__(self):
         return f"TraceableString({self.content}, {self.origins})"

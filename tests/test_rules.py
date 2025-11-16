@@ -5,7 +5,6 @@ This test suite covers different rules (skip rules, substitution rules,
 import rules) and their interactions.
 """
 
-
 from flachtex import FileFinder, Preprocessor, remove_comments
 from flachtex.rules import (
     ChangesRule,
