@@ -562,6 +562,72 @@ class TestIndentation:
         )
         assert str(result) == expected
 
+    def test_commented_begin_ignored(self):
+        """Commented-out \\begin should not affect indentation."""
+        content = TraceableString(
+            "Text before.\n"
+            "% \\begin{itemize}\n"
+            "Text after.\n"
+            "\\begin{itemize}\n"
+            "\\item Real item.\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "Text before.\n"
+            "% \\begin{itemize}\n"
+            "Text after.\n"
+            "\\begin{itemize}\n"
+            "  \\item Real item.\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_commented_end_ignored(self):
+        """Commented-out \\end should not affect indentation."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item First.\n"
+            "% \\end{itemize}\n"
+            "\\item Second.\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "\\begin{itemize}\n"
+            "  \\item First.\n"
+            "  % \\end{itemize}\n"
+            "  \\item Second.\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_commented_environments_complex(self):
+        """Mix of real and commented environments."""
+        content = TraceableString(
+            "% \\begin{enumerate}\n"
+            "\\begin{itemize}\n"
+            "\\item One.\n"
+            "% \\end{itemize}\n"
+            "\\item Two.\n"
+            "\\end{itemize}\n"
+            "% \\begin{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "% \\begin{enumerate}\n"
+            "\\begin{itemize}\n"
+            "  \\item One.\n"
+            "  % \\end{itemize}\n"
+            "  \\item Two.\n"
+            "\\end{itemize}\n"
+            "% \\begin{itemize}"
+        )
+        assert str(result) == expected
+
 
 class TestBlankLineNormalization:
     """Test normalization of excessive blank lines."""
