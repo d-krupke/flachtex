@@ -381,6 +381,165 @@ class TestOriginTracking:
         assert result.origins is not None
 
 
+class TestIndentation:
+    """Test indentation of environments."""
+
+    def test_simple_environment_indentation(self):
+        """Content inside environments should be indented."""
+        content = TraceableString(
+            "Before text.\n"
+            "\\begin{itemize}\n"
+            "\\item First. Second.\n"
+            "\\item Third.\n"
+            "\\end{itemize}\n"
+            "After text.",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "Before text.\n"
+            "\\begin{itemize}\n"
+            "  \\item First.\n"
+            "  Second.\n"
+            "  \\item Third.\n"
+            "\\end{itemize}\n"
+            "After text."
+        )
+        assert str(result) == expected
+
+    def test_nested_environment_indentation(self):
+        """Nested environments should have progressive indentation."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item Outer.\n"
+            "\\begin{enumerate}\n"
+            "\\item Inner.\n"
+            "\\end{enumerate}\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "\\begin{itemize}\n"
+            "  \\item Outer.\n"
+            "  \\begin{enumerate}\n"
+            "    \\item Inner.\n"
+            "  \\end{enumerate}\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_custom_indent_size(self):
+        """Should support custom indentation size."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item First.\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=4)
+        expected = (
+            "\\begin{itemize}\n"
+            "    \\item First.\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_no_indentation_when_disabled(self):
+        """Indentation should be disabled when indent=0."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item First. Second.\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        expected = (
+            "\\begin{itemize}\n"
+            "\\item First.\n"
+            "Second.\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_verbatim_not_indented(self):
+        """Verbatim environments should not be indented."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item Text.\n"
+            "\\begin{verbatim}\n"
+            "Code\n"
+            "\\end{verbatim}\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        # Verbatim content stays as-is
+        assert "\\begin{verbatim}\nCode\n\\end{verbatim}" in str(result)
+
+    def test_equation_environment_indentation(self):
+        """Math environments should be indented."""
+        content = TraceableString(
+            "Text before.\n"
+            "\\begin{equation}\n"
+            "E = mc^2\n"
+            "\\end{equation}\n"
+            "Text after.",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "Text before.\n"
+            "\\begin{equation}\n"
+            "  E = mc^2\n"
+            "\\end{equation}\n"
+            "Text after."
+        )
+        assert str(result) == expected
+
+    def test_indentation_with_sentences(self):
+        """Indentation should work with sentence splitting."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item First sentence. Second sentence. Third sentence.\n"
+            "\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "\\begin{itemize}\n"
+            "  \\item First sentence.\n"
+            "  Second sentence.\n"
+            "  Third sentence.\n"
+            "\\end{itemize}"
+        )
+        assert str(result) == expected
+
+    def test_multiple_environments(self):
+        """Multiple environments at same level should have same indentation."""
+        content = TraceableString(
+            "\\begin{itemize}\n"
+            "\\item One.\n"
+            "\\end{itemize}\n"
+            "Text between.\n"
+            "\\begin{enumerate}\n"
+            "\\item Two.\n"
+            "\\end{enumerate}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "\\begin{itemize}\n"
+            "  \\item One.\n"
+            "\\end{itemize}\n"
+            "Text between.\n"
+            "\\begin{enumerate}\n"
+            "  \\item Two.\n"
+            "\\end{enumerate}"
+        )
+        assert str(result) == expected
+
+
 class TestEdgeCases:
     """Test edge cases and potential issues."""
 

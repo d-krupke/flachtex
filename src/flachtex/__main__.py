@@ -38,6 +38,13 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Format output with one sentence per line for diff-friendly results.",
     )
+    parser.add_argument(
+        "--indent",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Indent environments with N spaces (default: 0, disabled). Use with --format.",
+    )
     parser.add_argument("path", nargs=1, help="Path to main.tex")
     args = parser.parse_args()
     if not args.path:
@@ -83,7 +90,10 @@ def main() -> None:
     if args.comments:
         doc = remove_comments(doc)
     if args.format:
-        doc = format_latex(doc)
+        doc = format_latex(doc, indent=args.indent, sentence_per_line=True)
+    elif args.indent > 0:
+        # If indent is specified without --format, apply indentation only (no sentence splitting)
+        doc = format_latex(doc, indent=args.indent, sentence_per_line=False)
     if args.to_json:
         data = doc.to_json()
         data["sources"] = preprocessor.structure

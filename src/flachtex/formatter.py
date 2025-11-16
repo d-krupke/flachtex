@@ -209,20 +209,198 @@ def _find_sentence_boundaries(content: str, protected_ranges: list[Range]) -> li
     return boundaries
 
 
-def format_latex(content: TraceableString) -> TraceableString:
+class EnvironmentTracker:
+    """Tracks LaTeX environment nesting for indentation."""
+
+    # Environments that should be excluded from indentation
+    EXCLUDE_FROM_INDENTATION = [
+        "verbatim",
+        "Verbatim",
+        "lstlisting",
+        "minted",
+    ]
+
+    def __init__(self, content: str):
+        """Initialize with the content to track."""
+        self.content = content
+        self.lines = content.split('\n')
+
+    def get_indentation_map(self) -> dict[int, int]:
+        """
+        Create a map of line number to indentation level.
+
+        Returns:
+            Dictionary mapping line number (0-indexed) to indentation level
+        """
+        indentation_map: dict[int, int] = {}
+        current_level = 0
+        inside_excluded_env = False
+        excluded_env_stack: list[str] = []
+
+        for line_num, line in enumerate(self.lines):
+            # Check for environment end first
+            end_match = re.match(r'^\s*\\end\{([^}]+)\}', line)
+            if end_match:
+                env_name = end_match.group(1)
+                if excluded_env_stack and excluded_env_stack[-1] == env_name:
+                    # Exiting an excluded environment
+                    excluded_env_stack.pop()
+                    if not excluded_env_stack:
+                        inside_excluded_env = False
+                    # \end line gets parent indentation
+                    indentation_map[line_num] = max(0, current_level - 1)
+                    current_level = max(0, current_level - 1)
+                elif not inside_excluded_env:
+                    # Exiting a normal environment
+                    current_level = max(0, current_level - 1)
+                    # \end line gets current level (after decrement)
+                    indentation_map[line_num] = current_level
+                else:
+                    # Inside excluded environment, no indentation
+                    indentation_map[line_num] = 0
+            else:
+                # Not an \end line, use current level
+                indentation_map[line_num] = 0 if inside_excluded_env else current_level
+
+            # Check for environment begin
+            begin_match = re.match(r'^\s*\\begin\{([^}]+)\}', line)
+            if begin_match:
+                env_name = begin_match.group(1)
+                if env_name in self.EXCLUDE_FROM_INDENTATION:
+                    # Entering an excluded environment
+                    excluded_env_stack.append(env_name)
+                    inside_excluded_env = True
+                    # \begin line stays at current level (before increment)
+                elif not inside_excluded_env:
+                    # Entering a normal environment
+                    # \begin line stays at current level
+                    current_level += 1
+
+        return indentation_map
+
+
+def _apply_indentation(
+    content: TraceableString, indent_size: int
+) -> TraceableString:
+    """
+    Apply indentation to content based on environment nesting.
+
+    Args:
+        content: The content to indent
+        indent_size: Number of spaces per indentation level
+
+    Returns:
+        Content with indentation applied
+    """
+    if indent_size <= 0:
+        return content
+
+    content_str = str(content)
+    tracker = EnvironmentTracker(content_str)
+    indentation_map = tracker.get_indentation_map()
+
+    lines = content_str.split('\n')
+    result_lines = []
+
+    for line_num, line in enumerate(lines):
+        indent_level = indentation_map.get(line_num, 0)
+        indent_str = ' ' * (indent_level * indent_size)
+
+        # Remove existing leading whitespace and add our indentation
+        stripped_line = line.lstrip()
+        if stripped_line:  # Non-empty line
+            result_lines.append(indent_str + stripped_line)
+        else:  # Empty line
+            result_lines.append('')
+
+    result_str = '\n'.join(result_lines)
+
+    # Rebuild as TraceableString, maintaining origins where possible
+    # For simplicity, we'll reconstruct by finding matches
+    # This is a bit complex with TraceableString, so let's do it carefully
+    return _rebuild_traceable_string(content, result_str)
+
+
+def _rebuild_traceable_string(
+    original: TraceableString, new_str: str
+) -> TraceableString:
+    """
+    Rebuild a TraceableString after formatting, preserving origins.
+
+    This is done by tracking which parts of the original string
+    correspond to which parts of the new string.
+    """
+    # For now, we'll use a simple approach: build up the result
+    # by finding differences and inserting formatter-originated content
+    result = TraceableString("", origin="formatter")
+
+    orig_str = str(original)
+    orig_pos = 0
+    new_pos = 0
+
+    while new_pos < len(new_str) and orig_pos < len(orig_str):
+        # Check if we have matching content
+        if new_str[new_pos] == orig_str[orig_pos]:
+            # Find the extent of the match
+            match_len = 0
+            while (new_pos + match_len < len(new_str) and
+                   orig_pos + match_len < len(orig_str) and
+                   new_str[new_pos + match_len] == orig_str[orig_pos + match_len]):
+                match_len += 1
+
+            # Add the matched portion from original (preserving origins)
+            result = result + original[orig_pos:orig_pos + match_len]
+            new_pos += match_len
+            orig_pos += match_len
+        else:
+            # We have a difference - this is likely added indentation
+            # Skip the new content (spaces) and mark as formatter-added
+            if new_str[new_pos] == ' ':
+                space_len = 0
+                while new_pos + space_len < len(new_str) and new_str[new_pos + space_len] == ' ':
+                    space_len += 1
+                result = result + TraceableString(' ' * space_len, origin="formatter")
+                new_pos += space_len
+            elif orig_str[orig_pos] == ' ':
+                # Original had spaces that we're removing
+                orig_pos += 1
+            else:
+                # Mismatch - shouldn't happen, but skip both
+                new_pos += 1
+                orig_pos += 1
+
+    # Handle any remaining content
+    if orig_pos < len(orig_str):
+        # Original has more content
+        pass  # We've consumed all new content
+    if new_pos < len(new_str):
+        # New string has more content (shouldn't happen)
+        result = result + TraceableString(new_str[new_pos:], origin="formatter")
+
+    return result
+
+
+def format_latex(
+    content: TraceableString,
+    indent: int = 0,
+    sentence_per_line: bool = True,
+) -> TraceableString:
     r"""
     Format LaTeX content to be diff-friendly using "one sentence per line".
 
     This formatter:
-    1. Splits sentences at sentence boundaries (., !, ?)
-    2. Preserves verbatim-like environments unchanged
-    3. Preserves math environments and inline math
-    4. Preserves comments
-    5. Preserves blank lines (paragraph separators)
-    6. Handles abbreviations and decimal numbers correctly
+    1. Splits sentences at sentence boundaries (., !, ?) (if sentence_per_line=True)
+    2. Indents content inside environments (if indent > 0)
+    3. Preserves verbatim-like environments unchanged
+    4. Preserves math environments (but indents them)
+    5. Preserves comments
+    6. Preserves blank lines (paragraph separators)
+    7. Handles abbreviations and decimal numbers correctly
 
     Args:
         content: The LaTeX content to format
+        indent: Number of spaces per indentation level (0 = no indentation)
+        sentence_per_line: Whether to split sentences onto separate lines
 
     Returns:
         Formatted content with origin tracking preserved
@@ -240,38 +418,43 @@ def format_latex(content: TraceableString) -> TraceableString:
     if not content_str or content_str.isspace():
         return content
 
-    # Find protected ranges (verbatim, math, etc.)
-    protected_ranges: list[Range] = []
-
-    verbatim_detector = VerbatimEnvironmentDetector()
-    protected_ranges.extend(verbatim_detector.find_all(content_str))
-
-    math_detector = MathEnvironmentDetector()
-    protected_ranges.extend(math_detector.find_all(content_str))
-
-    # Sort ranges
-    protected_ranges.sort()
-
-    # Find sentence boundaries
-    boundaries = _find_sentence_boundaries(content_str, protected_ranges)
-
-    if not boundaries:
-        # No formatting needed
-        return content
-
-    # Build the formatted content by replacing spaces after sentence endings with newlines
-    # We need to work backwards to maintain correct positions
-    boundaries_reversed = sorted(boundaries, reverse=True)
-
     result = content
-    for boundary_pos in boundaries_reversed:
-        # Find the end of the whitespace at this boundary
-        space_end = boundary_pos
-        while space_end < len(str(result)) and str(result)[space_end] in ' \t':
-            space_end += 1
 
-        # Replace the whitespace with a newline
-        # Keep everything before, replace spaces with newline, keep everything after
-        result = result[:boundary_pos] + TraceableString("\n", origin="formatter") + result[space_end:]
+    # Apply sentence splitting if requested
+    if sentence_per_line:
+        # Find protected ranges (verbatim, math, etc.)
+        protected_ranges: list[Range] = []
+
+        verbatim_detector = VerbatimEnvironmentDetector()
+        protected_ranges.extend(verbatim_detector.find_all(content_str))
+
+        math_detector = MathEnvironmentDetector()
+        protected_ranges.extend(math_detector.find_all(content_str))
+
+        # Sort ranges
+        protected_ranges.sort()
+
+        # Find sentence boundaries
+        boundaries = _find_sentence_boundaries(content_str, protected_ranges)
+
+        # Apply sentence splitting if we have boundaries
+        if boundaries:
+            # Build the formatted content by replacing spaces after sentence endings with newlines
+            # We need to work backwards to maintain correct positions
+            boundaries_reversed = sorted(boundaries, reverse=True)
+
+            for boundary_pos in boundaries_reversed:
+                # Find the end of the whitespace at this boundary
+                space_end = boundary_pos
+                while space_end < len(str(result)) and str(result)[space_end] in ' \t':
+                    space_end += 1
+
+                # Replace the whitespace with a newline
+                # Keep everything before, replace spaces with newline, keep everything after
+                result = result[:boundary_pos] + TraceableString("\n", origin="formatter") + result[space_end:]
+
+    # Apply indentation if requested
+    if indent > 0:
+        result = _apply_indentation(result, indent)
 
     return result

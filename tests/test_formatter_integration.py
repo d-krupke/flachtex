@@ -142,3 +142,85 @@ def test_formatter_with_complex_document():
 
     # Abbreviations should not cause splits
     assert "et al." in result_str
+
+
+def test_formatter_with_indentation():
+    """Test formatter with indentation enabled."""
+    from flachtex.formatter import format_latex
+
+    documents = {
+        "main.tex": (
+            "\\begin{itemize}\n"
+            "\\item First. Second.\n"
+            "\\end{itemize}"
+        ),
+    }
+    preprocessor = Preprocessor("/")
+    file_finder = FileFinder("/", documents)
+    preprocessor.file_finder = file_finder
+    doc = preprocessor.expand_file("main.tex")
+    result = format_latex(doc, indent=2)
+
+    expected = (
+        "\\begin{itemize}\n"
+        "  \\item First.\n"
+        "  Second.\n"
+        "\\end{itemize}"
+    )
+    assert str(result) == expected
+
+
+def test_formatter_indentation_without_sentence_split():
+    """Test indentation without sentence splitting."""
+    from flachtex.formatter import format_latex
+
+    documents = {
+        "main.tex": (
+            "\\begin{itemize}\n"
+            "\\item First. Second.\n"
+            "\\end{itemize}"
+        ),
+    }
+    preprocessor = Preprocessor("/")
+    file_finder = FileFinder("/", documents)
+    preprocessor.file_finder = file_finder
+    doc = preprocessor.expand_file("main.tex")
+    result = format_latex(doc, indent=2, sentence_per_line=False)
+
+    expected = (
+        "\\begin{itemize}\n"
+        "  \\item First. Second.\n"
+        "\\end{itemize}"
+    )
+    assert str(result) == expected
+
+
+def test_formatter_nested_environments_with_indentation():
+    """Test nested environments get progressive indentation."""
+    from flachtex.formatter import format_latex
+
+    documents = {
+        "main.tex": (
+            "\\begin{itemize}\n"
+            "\\item Outer.\n"
+            "\\begin{enumerate}\n"
+            "\\item Inner.\n"
+            "\\end{enumerate}\n"
+            "\\end{itemize}"
+        ),
+    }
+    preprocessor = Preprocessor("/")
+    file_finder = FileFinder("/", documents)
+    preprocessor.file_finder = file_finder
+    doc = preprocessor.expand_file("main.tex")
+    result = format_latex(doc, indent=2)
+
+    expected = (
+        "\\begin{itemize}\n"
+        "  \\item Outer.\n"
+        "  \\begin{enumerate}\n"
+        "    \\item Inner.\n"
+        "  \\end{enumerate}\n"
+        "\\end{itemize}"
+    )
+    assert str(result) == expected
