@@ -5,7 +5,6 @@ The formatter implements "one sentence per line" which is best practice
 for version control systems, making diffs more readable.
 """
 
-import pytest
 
 from flachtex.formatter import format_latex
 from flachtex.traceable_string import TraceableString
@@ -21,7 +20,9 @@ class TestBasicSentenceSplitting:
             origin="test",
         )
         result = format_latex(content)
-        expected = "This is sentence one.\nThis is sentence two.\nThis is sentence three."
+        expected = (
+            "This is sentence one.\nThis is sentence two.\nThis is sentence three."
+        )
         assert str(result) == expected
 
     def test_preserve_single_sentence(self):
@@ -47,7 +48,9 @@ class TestBasicSentenceSplitting:
             origin="test",
         )
         result = format_latex(content)
-        expected = "This is sentence one.\nThis is sentence two.\nThis is sentence three."
+        expected = (
+            "This is sentence one.\nThis is sentence two.\nThis is sentence three."
+        )
         assert str(result) == expected
 
     def test_abbreviations_not_split(self):
@@ -110,9 +113,7 @@ class TestCommentsHandling:
             origin="test",
         )
         result = format_latex(content)
-        expected = (
-            "This is a sentence. % This is a comment\nThis is another sentence."
-        )
+        expected = "This is a sentence. % This is a comment\nThis is another sentence."
         assert str(result) == expected
 
     def test_comment_at_sentence_boundary(self):
@@ -160,15 +161,11 @@ class TestCommentsHandling:
     def test_comment_with_various_punctuation(self):
         """Comments with various punctuation should not be split."""
         content = TraceableString(
-            "Text. % What about this? And this! Dr. Smith said so.\n"
-            "More text.",
+            "Text. % What about this? And this! Dr. Smith said so.\nMore text.",
             origin="test",
         )
         result = format_latex(content)
-        expected = (
-            "Text. % What about this? And this! Dr. Smith said so.\n"
-            "More text."
-        )
+        expected = "Text. % What about this? And this! Dr. Smith said so.\nMore text."
         assert str(result) == expected
 
 
@@ -274,9 +271,7 @@ class TestMathEnvironments:
             origin="test",
         )
         result = format_latex(content)
-        expected = (
-            "The value $x = 3.14$ is approximate.\nThis is another sentence."
-        )
+        expected = "The value $x = 3.14$ is approximate.\nThis is another sentence."
         assert str(result) == expected
 
     def test_display_math_preserved(self):
@@ -340,9 +335,7 @@ class TestLaTeXCommands:
             origin="test",
         )
         result = format_latex(content)
-        expected = (
-            "This was proven by Smith\\cite{smith2020}.\nThis is another fact."
-        )
+        expected = "This was proven by Smith\\cite{smith2020}.\nThis is another fact."
         assert str(result) == expected
 
     def test_ref_commands(self):
@@ -478,34 +471,21 @@ class TestIndentation:
     def test_custom_indent_size(self):
         """Should support custom indentation size."""
         content = TraceableString(
-            "\\begin{itemize}\n"
-            "\\item First.\n"
-            "\\end{itemize}",
+            "\\begin{itemize}\n\\item First.\n\\end{itemize}",
             origin="test",
         )
         result = format_latex(content, indent=4)
-        expected = (
-            "\\begin{itemize}\n"
-            "    \\item First.\n"
-            "\\end{itemize}"
-        )
+        expected = "\\begin{itemize}\n    \\item First.\n\\end{itemize}"
         assert str(result) == expected
 
     def test_no_indentation_when_disabled(self):
         """Indentation should be disabled when indent=0."""
         content = TraceableString(
-            "\\begin{itemize}\n"
-            "\\item First. Second.\n"
-            "\\end{itemize}",
+            "\\begin{itemize}\n\\item First. Second.\n\\end{itemize}",
             origin="test",
         )
         result = format_latex(content, indent=0)
-        expected = (
-            "\\begin{itemize}\n"
-            "\\item First.\n"
-            "Second.\n"
-            "\\end{itemize}"
-        )
+        expected = "\\begin{itemize}\n\\item First.\nSecond.\n\\end{itemize}"
         assert str(result) == expected
 
     def test_verbatim_not_indented(self):
@@ -526,20 +506,12 @@ class TestIndentation:
     def test_equation_environment_indentation(self):
         """Math environments should be indented."""
         content = TraceableString(
-            "Text before.\n"
-            "\\begin{equation}\n"
-            "E = mc^2\n"
-            "\\end{equation}\n"
-            "Text after.",
+            "Text before.\n\\begin{equation}\nE = mc^2\n\\end{equation}\nText after.",
             origin="test",
         )
         result = format_latex(content, indent=2)
         expected = (
-            "Text before.\n"
-            "\\begin{equation}\n"
-            "  E = mc^2\n"
-            "\\end{equation}\n"
-            "Text after."
+            "Text before.\n\\begin{equation}\n  E = mc^2\n\\end{equation}\nText after."
         )
         assert str(result) == expected
 
@@ -704,7 +676,9 @@ class TestBlankLineNormalization:
             origin="test",
         )
         result = format_latex(content, indent=0)
-        expected = "First sentence.\nSecond sentence.\n\nThird sentence.\nFourth sentence."
+        expected = (
+            "First sentence.\nSecond sentence.\n\nThird sentence.\nFourth sentence."
+        )
         assert str(result) == expected
 
     def test_normalize_with_indentation(self):

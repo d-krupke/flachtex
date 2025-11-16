@@ -76,8 +76,18 @@ class MathEnvironmentDetector:
             ranges.append(Range(match.start(), match.end()))
 
         # Math environments
-        math_envs = ["equation", "equation*", "align", "align*", "gather", "gather*",
-                     "multline", "multline*", "eqnarray", "eqnarray*"]
+        math_envs = [
+            "equation",
+            "equation*",
+            "align",
+            "align*",
+            "gather",
+            "gather*",
+            "multline",
+            "multline*",
+            "eqnarray",
+            "eqnarray*",
+        ]
         for env in math_envs:
             pattern = rf"\\begin\{{{env}\}}.*?\\end\{{{env}\}}"
             for match in re.finditer(pattern, content, re.DOTALL):
@@ -106,7 +116,7 @@ class CommentDetector:
 
         # Match % followed by anything until end of line
         # But not if the % is escaped (preceded by \)
-        for match in re.finditer(r'(?<!\\)%.*', content):
+        for match in re.finditer(r"(?<!\\)%.*", content):
             ranges.append(Range(match.start(), match.end()))
 
         return ranges

@@ -32,7 +32,7 @@ class EnvironmentTracker:
     def __init__(self, content: str):
         """Initialize with the content to track."""
         self.content = content
-        self.lines = content.split('\n')
+        self.lines = content.split("\n")
 
     def get_indentation_map(self) -> dict[int, int]:
         """
@@ -48,7 +48,7 @@ class EnvironmentTracker:
 
         for line_num, line in enumerate(self.lines):
             # Check for environment end first
-            end_match = re.match(r'^\s*\\end\{([^}]+)\}', line)
+            end_match = re.match(r"^\s*\\end\{([^}]+)\}", line)
             if end_match:
                 env_name = end_match.group(1)
                 if verbatim_stack and verbatim_stack[-1] == env_name:
@@ -72,7 +72,7 @@ class EnvironmentTracker:
                 indentation_map[line_num] = 0 if inside_verbatim else current_level
 
             # Check for environment begin
-            begin_match = re.match(r'^\s*\\begin\{([^}]+)\}', line)
+            begin_match = re.match(r"^\s*\\begin\{([^}]+)\}", line)
             if begin_match:
                 env_name = begin_match.group(1)
                 if env_name in self.VERBATIM_ENVIRONMENTS:

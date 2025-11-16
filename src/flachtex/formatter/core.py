@@ -9,7 +9,11 @@ from __future__ import annotations
 
 from ..traceable_string import TraceableString
 from ..utils import Range
-from .detectors import CommentDetector, MathEnvironmentDetector, VerbatimEnvironmentDetector
+from .detectors import (
+    CommentDetector,
+    MathEnvironmentDetector,
+    VerbatimEnvironmentDetector,
+)
 from .indentation import apply_indentation
 from .normalization import normalize_blank_lines
 from .sentence_splitter import find_sentence_boundaries
@@ -84,12 +88,16 @@ def format_latex(
             for boundary_pos in boundaries_reversed:
                 # Find the end of the whitespace at this boundary
                 space_end = boundary_pos
-                while space_end < len(str(result)) and str(result)[space_end] in ' \t':
+                while space_end < len(str(result)) and str(result)[space_end] in " \t":
                     space_end += 1
 
                 # Replace the whitespace with a newline
                 # Keep everything before, replace spaces with newline, keep everything after
-                result = result[:boundary_pos] + TraceableString("\n", origin="formatter") + result[space_end:]
+                result = (
+                    result[:boundary_pos]
+                    + TraceableString("\n", origin="formatter")
+                    + result[space_end:]
+                )
 
     # Apply indentation if requested
     if indent > 0:

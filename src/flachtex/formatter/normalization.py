@@ -33,11 +33,11 @@ def normalize_blank_lines(content: TraceableString) -> TraceableString:
         return content
 
     # Find leading newlines to skip
-    leading_newlines = len(orig_str) - len(orig_str.lstrip('\n'))
+    leading_newlines = len(orig_str) - len(orig_str.lstrip("\n"))
 
     # Find trailing newlines
-    had_trailing_newline = orig_str.endswith('\n')
-    orig_stripped = orig_str.rstrip('\n')
+    had_trailing_newline = orig_str.endswith("\n")
+    orig_stripped = orig_str.rstrip("\n")
 
     # Work with the stripped version (no leading/trailing newlines)
     # We'll add back the trailing newline at the end
@@ -47,7 +47,7 @@ def normalize_blank_lines(content: TraceableString) -> TraceableString:
     # Find all positions where we have 3+ consecutive newlines IN THE MIDDLE
     # (not counting leading/trailing which we already handled)
     excessive_newline_ranges = []
-    for match in re.finditer(r'\n{3,}', orig_str):
+    for match in re.finditer(r"\n{3,}", orig_str):
         # Only process if this match is in the middle (not in leading/trailing areas)
         if match.start() >= work_start and match.end() <= work_end:
             # Keep first 2 newlines, mark the rest for removal
@@ -70,7 +70,7 @@ def normalize_blank_lines(content: TraceableString) -> TraceableString:
 
     # Add back one trailing newline if there was one
     if had_trailing_newline:
-        chunks.append(TraceableString('\n', origin="formatter"))
+        chunks.append(TraceableString("\n", origin="formatter"))
 
     # Concatenate all chunks
     if not chunks:

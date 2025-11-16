@@ -11,9 +11,7 @@ from ..traceable_string import TraceableString
 from .environment_tracker import EnvironmentTracker
 
 
-def apply_indentation(
-    content: TraceableString, indent_size: int
-) -> TraceableString:
+def apply_indentation(content: TraceableString, indent_size: int) -> TraceableString:
     """
     Apply indentation to content based on environment nesting.
 
@@ -31,21 +29,21 @@ def apply_indentation(
     tracker = EnvironmentTracker(content_str)
     indentation_map = tracker.get_indentation_map()
 
-    lines = content_str.split('\n')
+    lines = content_str.split("\n")
     result_lines = []
 
     for line_num, line in enumerate(lines):
         indent_level = indentation_map.get(line_num, 0)
-        indent_str = ' ' * (indent_level * indent_size)
+        indent_str = " " * (indent_level * indent_size)
 
         # Remove existing leading whitespace and add our indentation
         stripped_line = line.lstrip()
         if stripped_line:  # Non-empty line
             result_lines.append(indent_str + stripped_line)
         else:  # Empty line
-            result_lines.append('')
+            result_lines.append("")
 
-    result_str = '\n'.join(result_lines)
+    result_str = "\n".join(result_lines)
 
     # Rebuild as TraceableString, maintaining origins where possible
     # For simplicity, we'll reconstruct by finding matches
@@ -62,8 +60,8 @@ def rebuild_traceable_string(
     This works line-by-line, matching stripped content and adding indentation.
     """
     orig_str = str(original)
-    orig_lines = orig_str.split('\n')
-    new_lines = new_str.split('\n')
+    orig_lines = orig_str.split("\n")
+    new_lines = new_str.split("\n")
 
     # If line counts don't match, something went wrong - just create new TraceableString
     if len(orig_lines) != len(new_lines):
@@ -88,7 +86,9 @@ def rebuild_traceable_string(
 
         # Add the new leading spaces (from formatter)
         if new_leading_spaces > 0:
-            result = result + TraceableString(' ' * new_leading_spaces, origin="formatter")
+            result = result + TraceableString(
+                " " * new_leading_spaces, origin="formatter"
+            )
 
         # Add the content from original (preserving origin)
         if orig_content:

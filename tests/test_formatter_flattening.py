@@ -37,16 +37,8 @@ def test_simple_flatten_then_format():
 def test_flatten_with_environment_then_format():
     """Test flattening with environments followed by formatting."""
     documents = {
-        "main.tex": (
-            "Before include.\n"
-            "\\input{sub.tex}\n"
-            "After include."
-        ),
-        "sub.tex": (
-            "\\begin{itemize}\n"
-            "\\item First item.\n"
-            "\\end{itemize}"
-        ),
+        "main.tex": ("Before include.\n\\input{sub.tex}\nAfter include."),
+        "sub.tex": ("\\begin{itemize}\n\\item First item.\n\\end{itemize}"),
     }
     preprocessor = Preprocessor("/")
     file_finder = FileFinder("/", documents)
@@ -103,8 +95,7 @@ def test_flatten_multiline_with_format():
             "Third sentence in main."
         ),
         "sub.tex": (
-            "First sentence in sub. Second sentence in sub.\n"
-            "Third sentence in sub."
+            "First sentence in sub. Second sentence in sub.\nThird sentence in sub."
         ),
     }
     preprocessor = Preprocessor("/")

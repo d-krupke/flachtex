@@ -82,10 +82,7 @@ def test_formatter_with_math():
 def test_formatter_with_comments():
     """Test formatter preserves comments correctly."""
     documents = {
-        "main.tex": (
-            "This is a sentence. % comment here\n"
-            "This is another sentence."
-        ),
+        "main.tex": ("This is a sentence. % comment here\nThis is another sentence."),
     }
     result = flatten(documents, "main.tex", format_output=True)
     # Comment should stay with its sentence
@@ -149,11 +146,7 @@ def test_formatter_with_indentation():
     from flachtex.formatter import format_latex
 
     documents = {
-        "main.tex": (
-            "\\begin{itemize}\n"
-            "\\item First. Second.\n"
-            "\\end{itemize}"
-        ),
+        "main.tex": ("\\begin{itemize}\n\\item First. Second.\n\\end{itemize}"),
     }
     preprocessor = Preprocessor("/")
     file_finder = FileFinder("/", documents)
@@ -161,12 +154,7 @@ def test_formatter_with_indentation():
     doc = preprocessor.expand_file("main.tex")
     result = format_latex(doc, indent=2)
 
-    expected = (
-        "\\begin{itemize}\n"
-        "  \\item First.\n"
-        "  Second.\n"
-        "\\end{itemize}"
-    )
+    expected = "\\begin{itemize}\n  \\item First.\n  Second.\n\\end{itemize}"
     assert str(result) == expected
 
 
@@ -175,11 +163,7 @@ def test_formatter_indentation_without_sentence_split():
     from flachtex.formatter import format_latex
 
     documents = {
-        "main.tex": (
-            "\\begin{itemize}\n"
-            "\\item First. Second.\n"
-            "\\end{itemize}"
-        ),
+        "main.tex": ("\\begin{itemize}\n\\item First. Second.\n\\end{itemize}"),
     }
     preprocessor = Preprocessor("/")
     file_finder = FileFinder("/", documents)
@@ -187,11 +171,7 @@ def test_formatter_indentation_without_sentence_split():
     doc = preprocessor.expand_file("main.tex")
     result = format_latex(doc, indent=2, sentence_per_line=False)
 
-    expected = (
-        "\\begin{itemize}\n"
-        "  \\item First. Second.\n"
-        "\\end{itemize}"
-    )
+    expected = "\\begin{itemize}\n  \\item First. Second.\n\\end{itemize}"
     assert str(result) == expected
 
 

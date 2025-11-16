@@ -93,9 +93,10 @@ def main() -> None:
 
     if args.no_expand:
         # Don't expand includes, just read the file directly
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
         from .traceable_string import TraceableString
+
         doc = TraceableString(content, origin=str(file_path))
     else:
         # Normal flattening/expansion
