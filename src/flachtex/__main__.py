@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .command_substitution import NewCommandSubstitution, find_new_commands
 from .comments import remove_comments
+from .formatter import format_latex
 from .preprocessor import Preprocessor
 from .rules import ChangesRule, SubimportChangesRule, TodonotesRule
 
@@ -31,6 +32,11 @@ def parse_arguments() -> argparse.Namespace:
         "--newcommand",
         action="store_true",
         help="Automatically substitute custom commands.",
+    )
+    parser.add_argument(
+        "--format",
+        action="store_true",
+        help="Format output with one sentence per line for diff-friendly results.",
     )
     parser.add_argument("path", nargs=1, help="Path to main.tex")
     args = parser.parse_args()
@@ -76,6 +82,8 @@ def main() -> None:
 
     if args.comments:
         doc = remove_comments(doc)
+    if args.format:
+        doc = format_latex(doc)
     if args.to_json:
         data = doc.to_json()
         data["sources"] = preprocessor.structure
