@@ -539,6 +539,28 @@ class TestIndentation:
         )
         assert str(result) == expected
 
+    def test_document_environment_not_indented(self):
+        """Document environment should not cause indentation."""
+        content = TraceableString(
+            "\\begin{document}\n"
+            "Text in document.\n"
+            "\\begin{itemize}\n"
+            "\\item Nested item.\n"
+            "\\end{itemize}\n"
+            "\\end{document}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = (
+            "\\begin{document}\n"
+            "Text in document.\n"
+            "\\begin{itemize}\n"
+            "  \\item Nested item.\n"
+            "\\end{itemize}\n"
+            "\\end{document}"
+        )
+        assert str(result) == expected
+
 
 class TestEdgeCases:
     """Test edge cases and potential issues."""

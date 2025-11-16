@@ -212,12 +212,20 @@ def _find_sentence_boundaries(content: str, protected_ranges: list[Range]) -> li
 class EnvironmentTracker:
     """Tracks LaTeX environment nesting for indentation."""
 
-    # Environments that should be excluded from indentation
-    EXCLUDE_FROM_INDENTATION = [
+    # Verbatim-like environments: content must be preserved as-is (no indentation)
+    VERBATIM_ENVIRONMENTS = [
         "verbatim",
         "Verbatim",
         "lstlisting",
         "minted",
+        "algorithmic",
+    ]
+
+    # Document-level environments: don't increase indentation level
+    # (but nested environments inside them still get indented)
+    DOCUMENT_LEVEL_ENVIRONMENTS = [
+        "document",
+        "abstract",
     ]
 
     def __init__(self, content: str):
@@ -234,47 +242,49 @@ class EnvironmentTracker:
         """
         indentation_map: dict[int, int] = {}
         current_level = 0
-        inside_excluded_env = False
-        excluded_env_stack: list[str] = []
+        inside_verbatim = False
+        verbatim_stack: list[str] = []
 
         for line_num, line in enumerate(self.lines):
             # Check for environment end first
             end_match = re.match(r'^\s*\\end\{([^}]+)\}', line)
             if end_match:
                 env_name = end_match.group(1)
-                if excluded_env_stack and excluded_env_stack[-1] == env_name:
-                    # Exiting an excluded environment
-                    excluded_env_stack.pop()
-                    if not excluded_env_stack:
-                        inside_excluded_env = False
-                    # \end line gets parent indentation
-                    indentation_map[line_num] = max(0, current_level - 1)
-                    current_level = max(0, current_level - 1)
-                elif not inside_excluded_env:
+                if verbatim_stack and verbatim_stack[-1] == env_name:
+                    # Exiting a verbatim environment
+                    verbatim_stack.pop()
+                    if not verbatim_stack:
+                        inside_verbatim = False
+                    # \end line gets no indentation (inside verbatim)
+                    indentation_map[line_num] = 0
+                elif not inside_verbatim:
                     # Exiting a normal environment
-                    current_level = max(0, current_level - 1)
+                    if env_name not in self.DOCUMENT_LEVEL_ENVIRONMENTS:
+                        current_level = max(0, current_level - 1)
                     # \end line gets current level (after decrement)
                     indentation_map[line_num] = current_level
                 else:
-                    # Inside excluded environment, no indentation
+                    # Inside verbatim environment, no indentation
                     indentation_map[line_num] = 0
             else:
                 # Not an \end line, use current level
-                indentation_map[line_num] = 0 if inside_excluded_env else current_level
+                indentation_map[line_num] = 0 if inside_verbatim else current_level
 
             # Check for environment begin
             begin_match = re.match(r'^\s*\\begin\{([^}]+)\}', line)
             if begin_match:
                 env_name = begin_match.group(1)
-                if env_name in self.EXCLUDE_FROM_INDENTATION:
-                    # Entering an excluded environment
-                    excluded_env_stack.append(env_name)
-                    inside_excluded_env = True
+                if env_name in self.VERBATIM_ENVIRONMENTS:
+                    # Entering a verbatim environment
+                    verbatim_stack.append(env_name)
+                    inside_verbatim = True
                     # \begin line stays at current level (before increment)
-                elif not inside_excluded_env:
-                    # Entering a normal environment
+                elif not inside_verbatim:
+                    # Entering a normal or document-level environment
                     # \begin line stays at current level
-                    current_level += 1
+                    # Only increment level if not a document-level environment
+                    if env_name not in self.DOCUMENT_LEVEL_ENVIRONMENTS:
+                        current_level += 1
 
         return indentation_map
 
