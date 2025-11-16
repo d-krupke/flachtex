@@ -126,6 +126,51 @@ class TestCommentsHandling:
         expected = "This is sentence one.% comment\nThis is sentence two."
         assert str(result) == expected
 
+    def test_sentences_inside_comments_not_split(self):
+        """Sentences inside comments should not be split."""
+        content = TraceableString(
+            "This is text. % This is a comment. Another sentence in comment.\n"
+            "More text here.",
+            origin="test",
+        )
+        result = format_latex(content)
+        # The comment should stay on one line
+        expected = (
+            "This is text. % This is a comment. Another sentence in comment.\n"
+            "More text here."
+        )
+        assert str(result) == expected
+
+    def test_multiple_comments_with_sentences(self):
+        """Multiple comments with sentences should not be split."""
+        content = TraceableString(
+            "Text. % Comment one. Comment continues.\n"
+            "More text. % Comment two. More comment.\n"
+            "Final text.",
+            origin="test",
+        )
+        result = format_latex(content)
+        expected = (
+            "Text. % Comment one. Comment continues.\n"
+            "More text. % Comment two. More comment.\n"
+            "Final text."
+        )
+        assert str(result) == expected
+
+    def test_comment_with_various_punctuation(self):
+        """Comments with various punctuation should not be split."""
+        content = TraceableString(
+            "Text. % What about this? And this! Dr. Smith said so.\n"
+            "More text.",
+            origin="test",
+        )
+        result = format_latex(content)
+        expected = (
+            "Text. % What about this? And this! Dr. Smith said so.\n"
+            "More text."
+        )
+        assert str(result) == expected
+
 
 class TestVerbatimEnvironments:
     """Test that verbatim environments are not reformatted."""

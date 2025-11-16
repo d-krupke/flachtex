@@ -103,6 +103,32 @@ class MathEnvironmentDetector:
         return ranges
 
 
+class CommentDetector:
+    """Detects LaTeX comments (% to end of line)."""
+
+    def find_all(self, content: str) -> list[Range]:
+        """
+        Find all comment ranges in the content.
+
+        A comment starts with an unescaped % and continues to the end of the line
+        (but does not include the newline character).
+
+        Args:
+            content: The LaTeX content to search
+
+        Returns:
+            List of comment ranges that should be protected from sentence splitting
+        """
+        ranges: list[Range] = []
+
+        # Match % followed by anything until end of line
+        # But not if the % is escaped (preceded by \)
+        for match in re.finditer(r'(?<!\\)%.*', content):
+            ranges.append(Range(match.start(), match.end()))
+
+        return ranges
+
+
 def _is_in_range(position: int, ranges: list[Range]) -> bool:
     """Check if a position is within any of the given ranges."""
     for r in ranges:
@@ -150,24 +176,27 @@ def _find_sentence_boundaries(content: str, protected_ranges: list[Range]) -> li
         space_start = match.start(2)  # Position where space starts
         space_end = match.end(2)  # Position where space ends
 
-        # Skip if in protected range
+        # Skip if in protected range (includes comments, verbatim, math)
         if _is_in_range(end_pos, protected_ranges):
             continue
 
-        # Check if there's a comment on this line (we want to keep it with the sentence)
-        # Look ahead to see if we have a comment before a newline
+        # Skip if there's a comment on the same line after this boundary
+        # (we want to keep the comment with the sentence)
+        has_comment_on_line = False
         line_end = content.find('\n', space_start)
         if line_end != -1:
-            between_text = content[space_start:line_end]
-            # Check if there's a comment marker (not escaped) before the newline
-            if '%' in between_text and not between_text.startswith('\n'):
-                # Find the comment
-                comment_pos = between_text.find('%')
-                if comment_pos > 0 or (comment_pos == 0):
-                    # Check if it's escaped
-                    if comment_pos == 0 or between_text[comment_pos - 1] != '\\':
-                        # There's a comment on this line, skip this boundary
-                        continue
+            # Look for any comment in protected_ranges that starts in this range
+            for prange in protected_ranges:
+                if space_end <= prange.start < line_end:
+                    # There's a protected range on this line
+                    # Check if it's actually a comment by looking for %
+                    if prange.start < len(content) and content[prange.start] == '%':
+                        # It's a comment, don't split here
+                        has_comment_on_line = True
+                        break
+
+        if has_comment_on_line:
+            continue
 
         # Skip if it's already at end of line (followed only by newline)
         if match.group(2).startswith('\n'):
@@ -468,7 +497,7 @@ def format_latex(
     3. Normalizes excessive blank lines (reduces multiple blank lines to one)
     4. Preserves verbatim-like environments unchanged
     5. Preserves math environments (but indents them)
-    6. Preserves comments
+    6. Preserves comments (sentences inside comments are not split)
     7. Handles abbreviations and decimal numbers correctly
 
     Args:
@@ -496,7 +525,7 @@ def format_latex(
 
     # Apply sentence splitting if requested
     if sentence_per_line:
-        # Find protected ranges (verbatim, math, etc.)
+        # Find protected ranges (verbatim, math, comments, etc.)
         protected_ranges: list[Range] = []
 
         verbatim_detector = VerbatimEnvironmentDetector()
@@ -504,6 +533,9 @@ def format_latex(
 
         math_detector = MathEnvironmentDetector()
         protected_ranges.extend(math_detector.find_all(content_str))
+
+        comment_detector = CommentDetector()
+        protected_ranges.extend(comment_detector.find_all(content_str))
 
         # Sort ranges
         protected_ranges.sort()
