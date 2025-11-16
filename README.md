@@ -298,6 +298,7 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **0.7.0** Adding formatter
 - **0.6.0** Significant refactoring.
 - **0.5.0** Now will only replace `\input` and `\include` commands for which the
   file exists. Otherwise, it will leave the command as is. This allows you to
