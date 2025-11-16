@@ -381,6 +381,67 @@ def _rebuild_traceable_string(
     return result
 
 
+def _normalize_blank_lines(content: TraceableString) -> TraceableString:
+    """
+    Normalize excessive blank lines in the content.
+
+    - Multiple consecutive blank lines are reduced to one blank line
+    - Leading blank lines are removed
+    - Trailing blank lines are reduced to at most one newline
+
+    Args:
+        content: The content to normalize
+
+    Returns:
+        Content with normalized blank lines
+    """
+    content_str = str(content)
+
+    # Remove leading blank lines
+    content_str = content_str.lstrip('\n')
+
+    # Remove trailing blank lines (but keep one final newline if there was any)
+    had_trailing_newline = content_str.endswith('\n')
+    content_str = content_str.rstrip('\n')
+    if had_trailing_newline:
+        content_str += '\n'
+
+    # Reduce multiple consecutive blank lines to one blank line
+    # A blank line is represented by \n\n (two newlines)
+    # Three or more newlines should become two newlines
+    import re
+    content_str = re.sub(r'\n{3,}', '\n\n', content_str)
+
+    # Rebuild TraceableString by finding what remains from the original
+    # This is simpler than the indentation case - we're just removing characters
+    result = TraceableString("", origin="formatter")
+    orig_str = str(content)
+    orig_pos = 0
+    new_pos = 0
+
+    # Track removals at the beginning
+    leading_newlines = len(orig_str) - len(orig_str.lstrip('\n'))
+    orig_pos = leading_newlines
+
+    while new_pos < len(content_str) and orig_pos < len(orig_str):
+        if content_str[new_pos] == orig_str[orig_pos]:
+            # Character matches, include it from original
+            result = result + content[orig_pos:orig_pos + 1]
+            new_pos += 1
+            orig_pos += 1
+        elif orig_str[orig_pos] == '\n':
+            # Original has newline but new doesn't at this position
+            # This means we're skipping excessive newlines
+            orig_pos += 1
+        else:
+            # This shouldn't happen with just blank line normalization
+            # but handle it gracefully
+            new_pos += 1
+            orig_pos += 1
+
+    return result
+
+
 def format_latex(
     content: TraceableString,
     indent: int = 0,
@@ -392,10 +453,10 @@ def format_latex(
     This formatter:
     1. Splits sentences at sentence boundaries (., !, ?) (if sentence_per_line=True)
     2. Indents content inside environments (if indent > 0)
-    3. Preserves verbatim-like environments unchanged
-    4. Preserves math environments (but indents them)
-    5. Preserves comments
-    6. Preserves blank lines (paragraph separators)
+    3. Normalizes excessive blank lines (reduces multiple blank lines to one)
+    4. Preserves verbatim-like environments unchanged
+    5. Preserves math environments (but indents them)
+    6. Preserves comments
     7. Handles abbreviations and decimal numbers correctly
 
     Args:
@@ -457,5 +518,8 @@ def format_latex(
     # Apply indentation if requested
     if indent > 0:
         result = _apply_indentation(result, indent)
+
+    # Normalize blank lines (reduce excessive blank lines)
+    result = _normalize_blank_lines(result)
 
     return result

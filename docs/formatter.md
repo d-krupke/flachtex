@@ -193,6 +193,21 @@ flachtex --changes --format --indent 2 main.tex > processed.tex
 
 ## Formatting Behavior
 
+### Blank Line Normalization
+
+The formatter automatically normalizes excessive blank lines that often accumulate during flattening:
+
+**Normalized:**
+- Multiple consecutive blank lines (3+) are reduced to one blank line
+- Leading blank lines are removed
+- Trailing blank lines are reduced to at most one newline
+
+**Preserved:**
+- Single blank lines (paragraph separators)
+- Blank lines within verbatim environments
+
+This prevents the excessive newlines that flachtex may create when combining multiple files, while maintaining proper paragraph structure.
+
 ### Sentence Splitting
 
 The formatter splits text at sentence boundaries while being intelligent about:

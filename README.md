@@ -210,6 +210,11 @@ _flachtex_ includes an optional formatter that makes LaTeX documents more suitab
 - Excludes verbatim-like environments (verbatim, lstlisting, minted)
 - Document-level environments (document, abstract) don't cause indentation
 
+**Blank line normalization:**
+- Reduces excessive blank lines (3+) to one blank line
+- Removes leading/trailing blank lines
+- Preserves paragraph structure
+
 **Two main use cases:**
 
 1. **Format only** (without flattening):

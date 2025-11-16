@@ -89,13 +89,14 @@ class TestParagraphHandling:
         assert str(result) == expected
 
     def test_multiple_blank_lines(self):
-        """Preserve multiple blank lines."""
+        """Normalize multiple blank lines to single blank line."""
         content = TraceableString(
             "First paragraph.\n\n\nSecond paragraph.",
             origin="test",
         )
         result = format_latex(content)
-        expected = "First paragraph.\n\n\nSecond paragraph."
+        # Multiple blank lines are normalized to one blank line
+        expected = "First paragraph.\n\nSecond paragraph."
         assert str(result) == expected
 
 
@@ -559,6 +560,71 @@ class TestIndentation:
             "\\end{itemize}\n"
             "\\end{document}"
         )
+        assert str(result) == expected
+
+
+class TestBlankLineNormalization:
+    """Test normalization of excessive blank lines."""
+
+    def test_normalize_multiple_blank_lines(self):
+        """Multiple consecutive blank lines should be reduced to one."""
+        content = TraceableString(
+            "First paragraph.\n\n\n\nSecond paragraph.",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        expected = "First paragraph.\n\nSecond paragraph."
+        assert str(result) == expected
+
+    def test_preserve_single_blank_line(self):
+        """Single blank lines (paragraph separators) should be preserved."""
+        content = TraceableString(
+            "First paragraph.\n\nSecond paragraph.",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        expected = "First paragraph.\n\nSecond paragraph."
+        assert str(result) == expected
+
+    def test_normalize_with_sentence_splitting(self):
+        """Blank line normalization should work with sentence splitting."""
+        content = TraceableString(
+            "First sentence. Second sentence.\n\n\n\nThird sentence. Fourth sentence.",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        expected = "First sentence.\nSecond sentence.\n\nThird sentence.\nFourth sentence."
+        assert str(result) == expected
+
+    def test_normalize_with_indentation(self):
+        """Blank line normalization should work with indentation."""
+        content = TraceableString(
+            "\\begin{itemize}\n\n\n\\item First.\n\\end{itemize}",
+            origin="test",
+        )
+        result = format_latex(content, indent=2)
+        expected = "\\begin{itemize}\n\n  \\item First.\n\\end{itemize}"
+        assert str(result) == expected
+
+    def test_remove_trailing_blank_lines(self):
+        """Remove excessive blank lines at the end."""
+        content = TraceableString(
+            "Content here.\n\n\n\n",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        # Should keep at most one trailing newline
+        expected = "Content here.\n"
+        assert str(result) == expected
+
+    def test_remove_leading_blank_lines(self):
+        """Remove blank lines at the beginning."""
+        content = TraceableString(
+            "\n\n\nContent here.",
+            origin="test",
+        )
+        result = format_latex(content, indent=0)
+        expected = "Content here."
         assert str(result) == expected
 
 
