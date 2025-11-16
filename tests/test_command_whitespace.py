@@ -35,13 +35,12 @@ class TestControlSequenceSpaceSwallowing:
         result = apply_substitution_rules(
             TraceableString("\\cmd text", None), [sub]
         )
-        # LaTeX behavior: \cmd swallows the space, result should be "REPLACEMENTtext"
-        # Current flachtex: Does NOT swallow space due to bug (content[end] == " " always False)
-        # For now, documenting actual behavior:
-        assert str(result) == "REPLACEMENT text"  # BUG: should be "REPLACEMENTtext"
+        # LaTeX behavior: \cmd swallows the space, result is "cmdtext"
+        # flachtex simulates this: swallows space and adds {} to prevent further swallowing
+        assert str(result) == "REPLACEMENT{}text"
 
     def test_multiple_spaces_only_one_swallowed(self):
-        """\\cmd followed by multiple spaces should swallow only the first."""
+        r"""\cmd followed by multiple spaces should swallow all, then add {}."""
         sub = NewCommandSubstitution(space_substitution=True)
         sub.new_command(
             NewCommandDefinition(
@@ -51,9 +50,9 @@ class TestControlSequenceSpaceSwallowing:
         result = apply_substitution_rules(
             TraceableString("\\cmd  text", None), [sub]
         )
-        # LaTeX behavior: \cmd swallows first space, second remains -> "REPLACEMENT text"
-        # Current flachtex: Does NOT swallow any spaces
-        assert str(result) == "REPLACEMENT  text"  # BUG: should be "REPLACEMENT text"
+        # flachtex swallows ALL consecutive spaces (not just one like LaTeX)
+        # This is safer for preprocessing to avoid ambiguity
+        assert str(result) == "REPLACEMENT{}text"
 
     def test_empty_braces_prevent_swallowing(self):
         """\\cmd{} should not swallow following space."""
@@ -139,44 +138,65 @@ class TestSpaceSubstitutionFlag:
         assert str(result) == "REPLACEMENT text"
 
 
-class TestCurrentBugDocumentation:
-    """Document the current bug in whitespace handling."""
+class TestBugFix:
+    """Verify that the whitespace handling bug has been fixed."""
 
-    def test_traceable_string_indexing_bug(self):
+    def test_traceable_string_indexing_fix(self):
         """
-        The bug: content[index] returns TraceableString, not str.
+        The bug was: content[index] returns TraceableString, not str.
 
-        In command_substitution.py line 132:
+        The original buggy code:
             while content[end] == " ":
 
-        This comparison always fails because content[end] is a TraceableString
-        object, not a string character. The fix should be:
-            while str(content[end]) == " ":
-        or:
-            while content[end:end+1] == " ":  (if slicing returns str)
+        This comparison always failed because content[end] is a TraceableString
+        object, not a string character.
+
+        The fix: Convert to string first before indexing
+            content_str = str(content)
+            while end < len(content_str) and content_str[end] == " ":
         """
         content = TraceableString("\\cmd asd", None)
-        # Current behavior:
+        # Demonstrate the issue:
         assert content[4] != " "  # Returns TraceableString, not str
         assert str(content[4]) == " "  # Need to convert to str first
 
-        # This is why space swallowing never works!
+        # Verify the fix works
+        sub = NewCommandSubstitution(space_substitution=True)
+        sub.new_command(
+            NewCommandDefinition(
+                TraceableString("cmd", None), 0, TraceableString("TEXT", None)
+            )
+        )
+        result = apply_substitution_rules(content, [sub])
+        # Should now swallow the space and add {} (no space remains)
+        assert str(result) == "TEXT{}asd"
 
 
-class TestProposedCorrectBehavior:
-    """
-    Document what the correct behavior should be after fixing the bug.
+class TestComplexScenarios:
+    """Test complex real-world scenarios."""
 
-    These tests will fail with current implementation but show the goal.
-    """
+    def test_multiple_commands_in_sequence(self):
+        r"""Multiple commands in sequence should each handle spaces."""
+        sub = NewCommandSubstitution(space_substitution=True)
+        sub.new_command(
+            NewCommandDefinition(
+                TraceableString("foo", None), 0, TraceableString("FOO", None)
+            )
+        )
+        sub.new_command(
+            NewCommandDefinition(
+                TraceableString("bar", None), 0, TraceableString("BAR", None)
+            )
+        )
+        result = apply_substitution_rules(
+            TraceableString("\\foo \\bar text", None), [sub]
+        )
+        # Both commands should swallow their trailing spaces and add {}
+        # All spaces between commands are swallowed, resulting in no spaces
+        assert str(result) == "FOO{}BAR{}text"
 
-    def test_correct_single_space_swallowing(self):
-        """After fix: \\cmd should swallow exactly one space."""
-        # This test documents the DESIRED behavior
-        # Skip for now since it will fail
-        import pytest
-        pytest.skip("Waiting for fix to TraceableString indexing in space swallowing")
-
+    def test_command_at_end_of_line(self):
+        r"""Command at end of line should not add {} if no space follows."""
         sub = NewCommandSubstitution(space_substitution=True)
         sub.new_command(
             NewCommandDefinition(
@@ -184,24 +204,7 @@ class TestProposedCorrectBehavior:
             )
         )
         result = apply_substitution_rules(
-            TraceableString("\\cmd text", None), [sub]
+            TraceableString("\\cmd", None), [sub]
         )
-        # Should add {} to prevent further swallowing by LaTeX
-        assert str(result) == "TEXT{} text" or str(result) == "TEXTtext"
-
-    def test_correct_multiple_space_handling(self):
-        """After fix: \\cmd should swallow only first of multiple spaces."""
-        import pytest
-        pytest.skip("Waiting for fix to TraceableString indexing in space swallowing")
-
-        sub = NewCommandSubstitution(space_substitution=True)
-        sub.new_command(
-            NewCommandDefinition(
-                TraceableString("cmd", None), 0, TraceableString("TEXT", None)
-            )
-        )
-        result = apply_substitution_rules(
-            TraceableString("\\cmd  text", None), [sub]
-        )
-        # Should swallow all spaces and add {}, resulting in one space
-        assert str(result) == "TEXT{} text"
+        # No space follows, so no {} should be added
+        assert str(result) == "TEXT"

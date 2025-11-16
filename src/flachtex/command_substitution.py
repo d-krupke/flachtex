@@ -125,11 +125,15 @@ class NewCommandSubstitution(SubstitutionRule):
             if (
                 self._space_sub
                 and definition.num_parameters == 0
-                and not str(sub).strip().endswith("\\xspace")
+                and not str(sub).endswith("\\xspace")
             ):
-                # The usage of a command like "\\cmd bla" is actually equivalent to
-                # "\\cmd{}bla". This function tries to simulate this.
-                while content[end] == " ":
+                # LaTeX control sequences (letter-based commands) swallow exactly
+                # one following space character. We simulate this by:
+                # 1. Consuming all consecutive spaces after the command
+                # 2. Adding {} to the replacement to prevent LaTeX from swallowing more
+                # This preserves spacing when the output is processed by LaTeX again.
+                content_str = str(content)
+                while end < len(content_str) and content_str[end] == " ":
                     end += 1
                 if end != match.end:
                     sub += TraceableString("{}", None)  # add non-space separator

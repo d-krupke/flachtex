@@ -65,7 +65,9 @@ def test_substitution_with_non_space_replacement():
     s = apply_substitution_rules(
         TraceableString("Bla \\test asd \\test{}.", None), [sub]
     )
-    assert str(s) == "Bla TEST asd TEST{}."
+    # After fix: \\test swallows the space and adds {}, so result is TEST{}asd
+    # \\test{} already has braces, so no space is swallowed
+    assert str(s) == "Bla TEST{}asd TEST{}."
 
 
 def test_complex_commands():
