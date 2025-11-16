@@ -337,55 +337,46 @@ def _rebuild_traceable_string(
     """
     Rebuild a TraceableString after formatting, preserving origins.
 
-    This is done by tracking which parts of the original string
-    correspond to which parts of the new string.
+    This works line-by-line, matching stripped content and adding indentation.
     """
-    # For now, we'll use a simple approach: build up the result
-    # by finding differences and inserting formatter-originated content
-    result = TraceableString("", origin="formatter")
-
     orig_str = str(original)
+    orig_lines = orig_str.split('\n')
+    new_lines = new_str.split('\n')
+
+    # If line counts don't match, something went wrong - just create new TraceableString
+    if len(orig_lines) != len(new_lines):
+        return TraceableString(new_str, origin="formatter")
+
+    result = TraceableString("", origin="formatter")
     orig_pos = 0
-    new_pos = 0
 
-    while new_pos < len(new_str) and orig_pos < len(orig_str):
-        # Check if we have matching content
-        if new_str[new_pos] == orig_str[orig_pos]:
-            # Find the extent of the match
-            match_len = 0
-            while (new_pos + match_len < len(new_str) and
-                   orig_pos + match_len < len(orig_str) and
-                   new_str[new_pos + match_len] == orig_str[orig_pos + match_len]):
-                match_len += 1
+    for line_idx, (orig_line, new_line) in enumerate(zip(orig_lines, new_lines)):
+        # Add newline from previous line
+        if line_idx > 0:
+            result = result + TraceableString("\n", origin="formatter")
+            orig_pos += 1  # Account for newline in original
 
-            # Add the matched portion from original (preserving origins)
-            result = result + original[orig_pos:orig_pos + match_len]
-            new_pos += match_len
-            orig_pos += match_len
-        else:
-            # We have a difference - this is likely added indentation
-            # Skip the new content (spaces) and mark as formatter-added
-            if new_str[new_pos] == ' ':
-                space_len = 0
-                while new_pos + space_len < len(new_str) and new_str[new_pos + space_len] == ' ':
-                    space_len += 1
-                result = result + TraceableString(' ' * space_len, origin="formatter")
-                new_pos += space_len
-            elif orig_str[orig_pos] == ' ':
-                # Original had spaces that we're removing
-                orig_pos += 1
-            else:
-                # Mismatch - shouldn't happen, but skip both
-                new_pos += 1
-                orig_pos += 1
+        # Find leading spaces in new line
+        new_leading_spaces = len(new_line) - len(new_line.lstrip())
+        new_content = new_line.lstrip()
 
-    # Handle any remaining content
-    if orig_pos < len(orig_str):
-        # Original has more content
-        pass  # We've consumed all new content
-    if new_pos < len(new_str):
-        # New string has more content (shouldn't happen)
-        result = result + TraceableString(new_str[new_pos:], origin="formatter")
+        # Find leading spaces in original line
+        orig_leading_spaces = len(orig_line) - len(orig_line.lstrip())
+        orig_content = orig_line.lstrip()
+
+        # Add the new leading spaces (from formatter)
+        if new_leading_spaces > 0:
+            result = result + TraceableString(' ' * new_leading_spaces, origin="formatter")
+
+        # Add the content from original (preserving origin)
+        if orig_content:
+            # Find where this content is in the original string
+            content_start = orig_pos + orig_leading_spaces
+            content_end = content_start + len(orig_content)
+            result = result + original[content_start:content_end]
+
+        # Move position forward
+        orig_pos += len(orig_line)
 
     return result
 
