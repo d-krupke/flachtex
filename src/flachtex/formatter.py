@@ -395,49 +395,61 @@ def _normalize_blank_lines(content: TraceableString) -> TraceableString:
     Returns:
         Content with normalized blank lines
     """
-    content_str = str(content)
-
-    # Remove leading blank lines
-    content_str = content_str.lstrip('\n')
-
-    # Remove trailing blank lines (but keep one final newline if there was any)
-    had_trailing_newline = content_str.endswith('\n')
-    content_str = content_str.rstrip('\n')
-    if had_trailing_newline:
-        content_str += '\n'
-
-    # Reduce multiple consecutive blank lines to one blank line
-    # A blank line is represented by \n\n (two newlines)
-    # Three or more newlines should become two newlines
     import re
-    content_str = re.sub(r'\n{3,}', '\n\n', content_str)
 
-    # Rebuild TraceableString by finding what remains from the original
-    # This is simpler than the indentation case - we're just removing characters
-    result = TraceableString("", origin="formatter")
     orig_str = str(content)
-    orig_pos = 0
-    new_pos = 0
 
-    # Track removals at the beginning
+    # Handle empty content
+    if not orig_str:
+        return content
+
+    # Find leading newlines to skip
     leading_newlines = len(orig_str) - len(orig_str.lstrip('\n'))
-    orig_pos = leading_newlines
 
-    while new_pos < len(content_str) and orig_pos < len(orig_str):
-        if content_str[new_pos] == orig_str[orig_pos]:
-            # Character matches, include it from original
-            result = result + content[orig_pos:orig_pos + 1]
-            new_pos += 1
-            orig_pos += 1
-        elif orig_str[orig_pos] == '\n':
-            # Original has newline but new doesn't at this position
-            # This means we're skipping excessive newlines
-            orig_pos += 1
-        else:
-            # This shouldn't happen with just blank line normalization
-            # but handle it gracefully
-            new_pos += 1
-            orig_pos += 1
+    # Find trailing newlines
+    had_trailing_newline = orig_str.endswith('\n')
+    orig_stripped = orig_str.rstrip('\n')
+
+    # Work with the stripped version (no leading/trailing newlines)
+    # We'll add back the trailing newline at the end
+    work_start = leading_newlines
+    work_end = len(orig_stripped)
+
+    # Find all positions where we have 3+ consecutive newlines IN THE MIDDLE
+    # (not counting leading/trailing which we already handled)
+    excessive_newline_ranges = []
+    for match in re.finditer(r'\n{3,}', orig_str):
+        # Only process if this match is in the middle (not in leading/trailing areas)
+        if match.start() >= work_start and match.end() <= work_end:
+            # Keep first 2 newlines, mark the rest for removal
+            keep_until = match.start() + 2
+            excessive_newline_ranges.append((keep_until, match.end()))
+
+    # Build result by concatenating chunks from original
+    chunks = []
+    current_pos = work_start
+
+    # Add chunks between excessive newline ranges
+    for skip_start, skip_end in excessive_newline_ranges:
+        if current_pos < skip_start:
+            chunks.append(content[current_pos:skip_start])
+        current_pos = skip_end
+
+    # Add final chunk
+    if current_pos < work_end:
+        chunks.append(content[current_pos:work_end])
+
+    # Add back one trailing newline if there was one
+    if had_trailing_newline:
+        chunks.append(TraceableString('\n', origin="formatter"))
+
+    # Concatenate all chunks
+    if not chunks:
+        return TraceableString("", origin="formatter")
+
+    result = chunks[0]
+    for chunk in chunks[1:]:
+        result = result + chunk
 
     return result
 
