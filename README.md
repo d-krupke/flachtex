@@ -117,45 +117,45 @@ postprocessing.)
 
 ### CLI
 
-_flachtex_ comes with a simple CLI, if you don't want to use it via Python.
+_flachtex_ provides a comprehensive command-line interface for flattening, formatting, and preprocessing LaTeX documents.
 
-```
-usage: flachtex [-h] [--to_json] [--comments] [--attach] [--changes]
-              [--changes_prefix] [--todos] [--newcommand] [--format]
-              [--indent N] [--no-expand]
-              path
-
-flachtex: Traceable LaTeX flattening.
-
-positional arguments:
-  path              Path to main.tex
-
-options:
-  -h, --help        show this help message and exit
-  --to_json         Return a json.
-  --comments        Remove comments.
-  --attach          Attach sources to json.
-  --changes         Replace the commands of the changes package.
-  --changes_prefix  Use the prefix option in changes.
-  --todos           Remove todo-notes.
-  --newcommand      Automatically substitute custom commands.
-  --format          Format output with one sentence per line for diff-friendly results.
-  --indent N        Indent environments with N spaces (default: 0, disabled). Use with --format.
-  --no-expand       Don't expand \input and \include commands (only format the main file).
-```
-
-**Quick Examples:**
+**Quick Start:**
 
 ```bash
-# Flatten and format for version control
+# Basic flattening (multi-file → single file)
+flachtex main.tex > output.tex
+
+# Format for version control (recommended)
 flachtex --format --indent 2 main.tex > output.tex
 
-# Format without flattening (keep \input commands)
-flachtex --no-expand --format --indent 2 main.tex > output.tex
-
-# Full pipeline: flatten, remove comments, format
-flachtex --comments --format --indent 2 main.tex > output.tex
+# Clean for submission (remove comments, TODOs)
+flachtex --comments --todos main.tex > submission.tex
 ```
+
+**Common Workflows:**
+
+```bash
+# arXiv submission (flatten only)
+flachtex main.tex > arxiv_submission.tex
+
+# Journal submission (flatten + clean)
+flachtex --comments --todos main.tex > journal_submission.tex
+
+# Version control (format without flattening)
+flachtex --no-expand --format --indent 2 main.tex
+
+# Full pipeline (flatten, format, clean)
+flachtex --format --indent 2 --comments --todos main.tex > clean.tex
+```
+
+**Available Options:**
+
+Run `flachtex --help` for full documentation. Key option groups:
+
+- **Processing:** `--no-expand`, `--newcommand`, `--changes`
+- **Filtering:** `--comments`, `--todos`
+- **Formatting:** `--format`, `--indent N`
+- **Output:** `--to_json`, `--attach`
 
 See [docs/formatter.md](docs/formatter.md) for complete formatter documentation.
 
