@@ -356,6 +356,13 @@ commands, which could not be imported easily without this feature.
 
 ## Changelog
 
+- **1.0.0** Major release with UNCOMMENT markers and iterative processing
+  - Added `%%FLACHTEX-UNCOMMENT-START/STOP` markers to activate commented content
+  - Implemented iterative RAW/UNCOMMENT processing (UNCOMMENT can reveal RAW blocks)
+  - Improved CLI interface with organized argument groups and comprehensive examples
+  - Fixed blank line normalization after comment removal
+  - Added 29 new tests (17 UNCOMMENT tests + 12 recursive tests)
+  - Enhanced documentation with complete tested examples
 - **0.7.0** Adding formatter
 - **0.6.0** Significant refactoring.
 - **0.5.0** Now will only replace `\input` and `\include` commands for which the
