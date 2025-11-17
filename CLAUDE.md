@@ -173,7 +173,6 @@ When manipulating `TraceableString`:
 - `src/flachtex/formatter/`: Diff-friendly formatting implementation
 - `src/flachtex/rules/`: All preprocessing rules
 - `docs/formatter.md`: Complete formatter documentation
-- `docs/PROTECTION_MARKERS_STRATEGY.md`: Design decisions for protection markers
 - `pyproject.toml`: Project configuration, dependencies, tool settings
 
 ## Recent Development Focus
