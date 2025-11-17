@@ -391,17 +391,17 @@ class TestSkipRulesEdgeCases:
     """Tests for edge cases in skip rules."""
 
     def test_nested_skip_blocks(self):
-        """Test nested FLACHTEX-SKIP blocks."""
+        """Test nested FLACHTEX-EXCLUDE blocks."""
         document = {
             "main.tex": (
                 "0\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "1\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "2\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "3\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "4\n"
             )
         }
@@ -412,7 +412,7 @@ class TestSkipRulesEdgeCases:
 
     def test_unclosed_skip_block(self):
         """Test skip block without closing marker."""
-        document = {"main.tex": "0\n%%FLACHTEX-SKIP-START\n1\n2\n"}
+        document = {"main.tex": "0\n%%FLACHTEX-EXCLUDE-START\n1\n2\n"}
         result = flatten(document)
         # Should handle gracefully - either skip to end or include everything
         assert "0" in result
@@ -421,7 +421,7 @@ class TestSkipRulesEdgeCases:
         """Test that skip blocks don't affect included files."""
         document = {
             "main.tex": (
-                "0\n%%FLACHTEX-SKIP-START\n\\input{a.tex}\n%%FLACHTEX-SKIP-STOP\n3\n"
+                "0\n%%FLACHTEX-EXCLUDE-START\n\\input{a.tex}\n%%FLACHTEX-EXCLUDE-STOP\n3\n"
             ),
             "a.tex": "1\n2\n",
         }

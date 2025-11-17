@@ -166,12 +166,135 @@ class Preprocessor:
 
         return result
 
+    def _process_uncomment_blocks(self, content: TraceableString) -> TraceableString:
+        """
+        Process UNCOMMENT blocks by removing leading '% ' from lines.
+
+        UNCOMMENT blocks are marked with:
+        %%FLACHTEX-UNCOMMENT-START
+        % commented content
+        %%FLACHTEX-UNCOMMENT-STOP
+
+        This removes the markers and uncomments the content (removes leading '% ').
+
+        Args:
+            content: The content to process
+
+        Returns:
+            Content with uncommented blocks
+
+        Raises:
+            ValueError: If UNCOMMENT blocks are unclosed, nested, or mismatched
+        """
+        content_str = str(content)
+
+        # Check for unclosed UNCOMMENT blocks
+        start_count = content_str.count("%%FLACHTEX-UNCOMMENT-START")
+        stop_count = content_str.count("%%FLACHTEX-UNCOMMENT-STOP")
+        if start_count != stop_count:
+            if start_count > stop_count:
+                msg = f"Unclosed UNCOMMENT block: {start_count} START markers but only {stop_count} STOP markers"
+            else:
+                msg = f"UNCOMMENT-STOP without UNCOMMENT-START: {stop_count} STOP markers but only {start_count} START markers"
+            raise ValueError(msg)
+
+        # Pattern to match UNCOMMENT blocks
+        # Use [ \t]* instead of \s* to avoid consuming newlines
+        pattern = r"^[ \t]*%%FLACHTEX-UNCOMMENT-START\n(.*?)^[ \t]*%%FLACHTEX-UNCOMMENT-STOP\n?"
+        matches = list(re.finditer(pattern, content_str, re.MULTILINE | re.DOTALL))
+
+        # Check for nested UNCOMMENT blocks (only active ones, not commented)
+        # Commented UNCOMMENT markers (like "% %%FLACHTEX-UNCOMMENT-START") are OK
+        # because they'll be revealed in the next iteration of processing
+        for match in matches:
+            block_content = match.group(1)
+            # Check if there are ACTIVE (non-commented) nested UNCOMMENT markers
+            if re.search(r"^[ \t]*%%FLACHTEX-UNCOMMENT-START", block_content, re.MULTILINE):
+                msg = "Nested UNCOMMENT blocks are not allowed"
+                raise ValueError(msg)
+
+        # Process UNCOMMENT blocks in reverse order to maintain positions
+        result = content
+        for match in reversed(matches):
+            # Get the content inside the markers
+            block_start = match.start(1)
+            block_end = match.end(1)
+            block_content = content[block_start:block_end]
+
+            # Uncomment the content: remove leading '% ' from each line
+            uncommented = self._uncomment_lines(block_content)
+
+            # Replace the entire block (including markers) with uncommented content
+            result = result[: match.start()] + uncommented + result[match.end() :]
+
+        return result
+
+    def _uncomment_lines(self, content: TraceableString) -> TraceableString:
+        """
+        Remove leading '% ' from lines in content.
+
+        Rules:
+        - '% ' (percent + space) → remove both
+        - '%' (percent alone) → remove percent only
+        - No leading '%' → leave unchanged
+
+        Args:
+            content: The content to uncomment
+
+        Returns:
+            Content with leading '% ' removed from lines
+        """
+        content_str = str(content)
+        lines = content_str.split("\n")
+        result_parts = []
+        offset = 0
+
+        for i, line in enumerate(lines):
+            if line.startswith("% "):
+                # Remove '% ' (percent + space)
+                line_start = offset
+                uncommented_start = offset + 2  # Skip '% '
+                line_end = offset + len(line)
+
+                # Keep the uncommented part
+                result_parts.append(content[uncommented_start:line_end])
+            elif line.startswith("%"):
+                # Remove '%' only (no space after)
+                line_start = offset
+                uncommented_start = offset + 1  # Skip '%'
+                line_end = offset + len(line)
+
+                # Keep the uncommented part
+                result_parts.append(content[uncommented_start:line_end])
+            else:
+                # No leading %, keep as is
+                line_start = offset
+                line_end = offset + len(line)
+                result_parts.append(content[line_start:line_end])
+
+            # Add newline (except for last line)
+            offset += len(line) + 1  # +1 for the \n
+            if i < len(lines) - 1:
+                result_parts.append(TraceableString("\n", origin="uncomment"))
+
+        # Combine all parts
+        result = TraceableString("", origin="uncomment")
+        for part in result_parts:
+            result = result + part
+
+        return result
+
     def read_file(self, file_path: Path | str) -> TraceableString:
         """
         Read a file and apply skip and substitution rules.
 
         RAW blocks (%%FLACHTEX-RAW-START/STOP) are extracted before processing
         and restored after, so they are completely excluded from preprocessing.
+
+        Iterative processing: RAW extraction and UNCOMMENT processing are done
+        in a loop to handle UNCOMMENT blocks revealing new RAW blocks. This
+        allows version swapping where alternative versions include RAW-protected
+        complex macros.
 
         Args:
             file_path: Path to the file to read
@@ -181,18 +304,45 @@ class Preprocessor:
 
         Raises:
             ValueError: If RAW blocks are malformed or contain imports
+            ValueError: If RAW/UNCOMMENT processing does not converge
         """
         content = TraceableString(self.file_finder.read(file_path), origin=file_path)
 
-        # Extract RAW blocks before preprocessing
-        content, raw_blocks = self._extract_raw_blocks(content)
+        # Iterative processing: extract RAW blocks and process UNCOMMENT until stable
+        # This allows UNCOMMENT to reveal RAW blocks
+        MAX_ITERATIONS = 10
+        all_raw_blocks: dict[str, TraceableString] = {}
+
+        for iteration in range(MAX_ITERATIONS):
+            # Extract RAW blocks
+            content, raw_blocks = self._extract_raw_blocks(content)
+            all_raw_blocks.update(raw_blocks)
+
+            # Process UNCOMMENT blocks (may reveal new RAW blocks)
+            content_before_uncomment = str(content)
+            content = self._process_uncomment_blocks(content)
+
+            # Check if UNCOMMENT revealed new RAW markers
+            # If content changed and contains new RAW markers, continue iterating
+            if str(content) == content_before_uncomment:
+                # No changes, we're done with iterative processing
+                break
+
+            # Check if there are new RAW markers to extract
+            if "%%FLACHTEX-RAW-START" not in str(content):
+                # No new RAW markers, we're done with iterative processing
+                break
+        else:
+            # Hit max iterations without converging
+            msg = f"RAW/UNCOMMENT processing did not converge after {MAX_ITERATIONS} iterations"
+            raise ValueError(msg)
 
         # Apply normal preprocessing (skip rules, substitution)
         content = apply_skip_rules(content, self.skip_rules)
         content = apply_substitution_rules(content, self.substitution_rules)
 
-        # Restore RAW blocks after preprocessing
-        content = self._restore_raw_blocks(content, raw_blocks)
+        # Restore all RAW blocks collected during iterations
+        content = self._restore_raw_blocks(content, all_raw_blocks)
 
         return content
 

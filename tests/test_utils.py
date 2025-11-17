@@ -18,7 +18,7 @@ class TestRange:
     Test the Range class used to track text regions.
 
     Users benefit from Range intersection detection when:
-    - Preventing overlapping %%FLACHTEX-SKIP-START blocks (would be ambiguous)
+    - Preventing overlapping %%FLACHTEX-EXCLUDE-START blocks (would be ambiguous)
     - Detecting conflicting import statements
     - Ensuring skip rules and import rules don't interfere with each other
     """
@@ -47,7 +47,7 @@ class TestRange:
     def test_intersects_overlapping(self):
         """
         Overlapping skip blocks would be ambiguous - users need clear error messages.
-        Example: If user writes overlapping %%FLACHTEX-SKIP-START blocks, which takes precedence?
+        Example: If user writes overlapping %%FLACHTEX-EXCLUDE-START blocks, which takes precedence?
         """
         r1 = Range(0, 10)  # First skip block
         r2 = Range(5, 15)  # Second skip block overlaps with first
@@ -57,7 +57,7 @@ class TestRange:
     def test_intersects_contained(self):
         """
         Nested skip blocks are also ambiguous and should be detected.
-        Example: %%FLACHTEX-SKIP-START ... %%FLACHTEX-SKIP-START ... %%FLACHTEX-SKIP-STOP
+        Example: %%FLACHTEX-EXCLUDE-START ... %%FLACHTEX-EXCLUDE-START ... %%FLACHTEX-EXCLUDE-STOP
         """
         r1 = Range(0, 20)  # Outer skip block
         r2 = Range(5, 15)  # Inner skip block (fully contained)

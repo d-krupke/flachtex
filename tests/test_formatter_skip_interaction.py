@@ -41,9 +41,9 @@ class TestSkipThenFormat:
         document = {
             "main.tex": (
                 "This is sentence one. This is sentence two.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "This should be skipped. Also this.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "This is sentence three."
             )
         }
@@ -55,7 +55,7 @@ class TestSkipThenFormat:
 
         # Skip block should already be gone
         assert "should be skipped" not in str(flattened), "Skip block must be removed during flattening"
-        assert "%%FLACHTEX-SKIP" not in str(flattened), "Skip markers must be removed"
+        assert "%%FLACHTEX-EXCLUDE" not in str(flattened), "Skip markers must be removed"
 
         # Then format
         result = format_latex(flattened)
@@ -79,9 +79,9 @@ class TestSkipThenFormat:
             "main.tex": (
                 "First paragraph.\n"
                 "\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip this paragraph.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\n"
                 "Second paragraph."
             )
@@ -112,9 +112,9 @@ class TestSkipThenFormat:
             "main.tex": (
                 "\\begin{itemize}\n"
                 "\\item First item.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "\\item Skipped item.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\\item Second item.\n"
                 "\\end{itemize}"
             )
@@ -158,9 +158,9 @@ class TestFormatThenSkip:
         """
         content = TraceableString(
             "Text before.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Content to skip.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Text after.",
             "test.tex"
         )
@@ -170,8 +170,8 @@ class TestFormatThenSkip:
         formatted_str = str(formatted)
 
         # Skip markers should still be present (they're comments)
-        assert "%%FLACHTEX-SKIP-START" in formatted_str, "Skip markers must be preserved during formatting"
-        assert "%%FLACHTEX-SKIP-STOP" in formatted_str, "Skip markers must be preserved during formatting"
+        assert "%%FLACHTEX-EXCLUDE-START" in formatted_str, "Skip markers must be preserved during formatting"
+        assert "%%FLACHTEX-EXCLUDE-STOP" in formatted_str, "Skip markers must be preserved during formatting"
 
         # Then apply skip rules
         result = apply_skip_rules(formatted, [BasicSkipRule()])
@@ -179,7 +179,7 @@ class TestFormatThenSkip:
 
         # Skip block should be removed
         assert "Content to skip" not in result_str, "Skip rules must work on formatted content"
-        assert "%%FLACHTEX-SKIP" not in result_str, "Skip markers must be removed"
+        assert "%%FLACHTEX-EXCLUDE" not in result_str, "Skip markers must be removed"
         assert "Text before" in result_str
         assert "Text after" in result_str
 
@@ -192,9 +192,9 @@ class TestFormatThenSkip:
         """
         content = TraceableString(
             "Sentence one. Sentence two.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Skip this. And this.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Sentence three.",
             "test.tex"
         )
@@ -231,9 +231,9 @@ class TestSkipMarkersInFormattedContent:
         """
         content = TraceableString(
             "Text before.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Content.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Text after.",
             "test.tex"
         )
@@ -242,8 +242,8 @@ class TestSkipMarkersInFormattedContent:
         formatted_str = str(formatted)
 
         # Skip markers should remain on their own lines
-        assert "%%FLACHTEX-SKIP-START\n" in formatted_str, "Skip START marker must stay on own line"
-        assert "%%FLACHTEX-SKIP-STOP\n" in formatted_str, "Skip STOP marker must stay on own line"
+        assert "%%FLACHTEX-EXCLUDE-START\n" in formatted_str, "Skip START marker must stay on own line"
+        assert "%%FLACHTEX-EXCLUDE-STOP\n" in formatted_str, "Skip STOP marker must stay on own line"
 
     def test_indented_skip_markers_preserved(self):
         """
@@ -255,9 +255,9 @@ class TestSkipMarkersInFormattedContent:
         content = TraceableString(
             "\\begin{itemize}\n"
             "  \\item Item one.\n"
-            "  %%FLACHTEX-SKIP-START\n"
+            "  %%FLACHTEX-EXCLUDE-START\n"
             "  \\item Skip this.\n"
-            "  %%FLACHTEX-SKIP-STOP\n"
+            "  %%FLACHTEX-EXCLUDE-STOP\n"
             "  \\item Item two.\n"
             "\\end{itemize}",
             "test.tex"
@@ -267,7 +267,7 @@ class TestSkipMarkersInFormattedContent:
         formatted = format_latex(content, indent=2)
 
         # Skip markers should still be present
-        assert "%%FLACHTEX-SKIP-START" in str(formatted), "Indented skip markers must be preserved"
+        assert "%%FLACHTEX-EXCLUDE-START" in str(formatted), "Indented skip markers must be preserved"
 
         # Skip rules should still work
         result = apply_skip_rules(formatted, [BasicSkipRule()])
@@ -292,9 +292,9 @@ class TestEdgeCases:
         document = {
             "main.tex": (
                 "Keep this. And this.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip sentence one. Skip sentence two. Skip sentence three.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "Keep this too."
             )
         }
@@ -323,8 +323,8 @@ class TestEdgeCases:
         """
         content = TraceableString(
             "Text before.\n"
-            "%%FLACHTEX-SKIP-START\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Text after.",
             "test.tex"
         )
@@ -340,7 +340,7 @@ class TestEdgeCases:
         assert "Text before." in result_str
         assert "Text after." in result_str
         # No skip markers
-        assert "%%FLACHTEX-SKIP" not in result_str
+        assert "%%FLACHTEX-EXCLUDE" not in result_str
 
     def test_multiple_skip_blocks_with_formatting(self):
         """
@@ -352,13 +352,13 @@ class TestEdgeCases:
         document = {
             "main.tex": (
                 "Intro sentence one. Intro sentence two.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip block 1.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "Middle sentence one. Middle sentence two.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip block 2.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "End sentence one."
             )
         }
@@ -405,9 +405,9 @@ class TestUserWorkflowDocumentation:
             "main.tex": "\\input{content.tex}",
             "content.tex": (
                 "Academic content here. More content.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Internal notes. Do not publish.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "Published content continues."
             )
         }
@@ -439,9 +439,9 @@ class TestUserWorkflowDocumentation:
         """
         content = TraceableString(
             "Content one. Content two.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Skip this. And this.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Content three.",
             "test.tex"
         )

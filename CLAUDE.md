@@ -86,13 +86,16 @@ flachtex --to_json --attach path/to/main.tex
 
 The preprocessing pipeline follows this flow:
 1. **File Reading**: `FileFinder` resolves and reads LaTeX files
-2. **RAW Block Extraction**: Extract `%%FLACHTEX-RAW-START/STOP` blocks (bypass all processing)
-3. **Skip Rules**: Remove marked sections (`%%FLACHTEX-SKIP-START/STOP`, TODOs, etc.)
+2. **Iterative RAW/UNCOMMENT Processing** (loops until stable):
+   - Extract `%%FLACHTEX-RAW-START/STOP` blocks (bypass all processing)
+   - Process `%%FLACHTEX-UNCOMMENT-START/STOP` blocks (activate commented content)
+   - Repeat if UNCOMMENT revealed new RAW blocks
+3. **Skip Rules**: Remove marked sections (`%%FLACHTEX-EXCLUDE-START/STOP`, TODOs, etc.)
 4. **Substitution Rules**: Transform commands (`\newcommand` expansion, `changes` package cleanup)
 5. **Import Finding**: Locate `\input`, `\include`, `\subimport` commands
 6. **Recursive Flattening**: Recursively expand imports while maintaining traceability
 7. **Subimport Path Adjustment**: Apply `SubimportSubstitutionRule` for path transformations
-8. **RAW Block Restoration**: Restore RAW blocks verbatim
+8. **RAW Block Restoration**: Restore all RAW blocks collected during iterations
 9. **Optional Formatting**: Apply diff-friendly formatting if requested
 
 ### Key Components
@@ -111,7 +114,7 @@ The preprocessing pipeline follows this flow:
 
 **Rules System** (`src/flachtex/rules/`):
 - **`ImportRule`**: Identifies file inclusion commands (e.g., `\input`, `\include`)
-- **`SkipRule`**: Marks sections to remove (e.g., `FLACHTEX-SKIP`, TODOs)
+- **`SkipRule`**: Marks sections to remove (e.g., `FLACHTEX-EXCLUDE`, TODOs)
 - **`SubstitutionRule`**: Transforms content (e.g., `ChangesRule`, `NewCommandSubstitution`)
 - **`SubimportSubstitutionRule`**: Adjusts paths after subimport processing
 
@@ -128,9 +131,10 @@ The preprocessing pipeline follows this flow:
 - **`detectors.py`**: Identifies verbatim/document-level environments
 
 **Protection Markers**:
-- `%%FLACHTEX-SKIP-START/STOP`: Exclude content from output (flattening only)
-- `%%FLACHTEX-RAW-START/STOP`: Bypass ALL preprocessing (added in recent work)
-- `%%FLACHTEX-FORMAT-SKIP-START/STOP`: Skip formatting while allowing other preprocessing
+- `%%FLACHTEX-EXCLUDE-START/STOP`: Exclude content from output (removed during skip rules)
+- `%%FLACHTEX-UNCOMMENT-START/STOP`: Activate commented content (removes leading `% ` from lines)
+- `%%FLACHTEX-RAW-START/STOP`: Bypass ALL preprocessing (extracted before processing, restored after)
+- `%%FLACHTEX-NO-FORMAT-START/STOP`: Skip formatting while allowing other preprocessing
 - `%%FLACHTEX-EXPLICIT-IMPORT[path]`: Manual import for complex cases
 
 ### Command Line Interface
@@ -175,7 +179,8 @@ When manipulating `TraceableString`:
 ## Recent Development Focus
 
 Recent commits focus on protection markers and formatter control:
+- Added UNCOMMENT markers (`%%FLACHTEX-UNCOMMENT-START/STOP`) to activate commented content
 - Added RAW markers (`%%FLACHTEX-RAW-START/STOP`) to bypass all preprocessing
-- Implemented FORMAT-SKIP markers for formatter-only exclusion
+- Implemented NO-FORMAT markers for formatter-only exclusion
 - Enhanced formatter with `--no-expand` mode (format without flattening)
-- Documented marker interactions and use cases
+- Documented marker interactions and use cases with comprehensive test coverage

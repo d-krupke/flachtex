@@ -45,9 +45,9 @@ _main.tex_
 
 \newcommand{\importantterm}{\emph{ImportantTerm}\xspace}
 
-%%FLACHTEX-SKIP-START
-Technicalities (e.g., configuration of Journal-template) that we want to skip.
-%%FLACHTEX-SKIP-STOP
+%%FLACHTEX-EXCLUDE-START
+Technicalities (e.g., configuration of Journal-template) that we want to exclude.
+%%FLACHTEX-EXCLUDE-STOP
 
 \begin{document}
 
@@ -231,6 +231,64 @@ _flachtex_ includes an optional formatter that makes LaTeX documents more suitab
 
 See [docs/formatter.md](docs/formatter.md) for detailed documentation.
 
+### Protection Markers
+
+_flachtex_ provides four types of comment-based markers to control processing:
+
+| Marker | Purpose | Use Case |
+|--------|---------|----------|
+| `%%FLACHTEX-EXCLUDE-START/STOP` | Remove content from output | Draft notes, WIP sections, supplementary material |
+| `%%FLACHTEX-UNCOMMENT-START/STOP` | Activate commented content | Path fixes, version swapping, conditional content |
+| `%%FLACHTEX-RAW-START/STOP` | Bypass ALL preprocessing | Complex `\newcommand` definitions |
+| `%%FLACHTEX-NO-FORMAT-START/STOP` | Skip formatting only | Manually formatted tables, equations |
+
+**Examples:**
+
+```latex
+% Exclude work-in-progress sections
+%%FLACHTEX-EXCLUDE-START
+\section{Future Work}
+This section is incomplete.
+%%FLACHTEX-EXCLUDE-STOP
+
+% Activate alternative content (e.g., fix paths after flattening)
+%%FLACHTEX-EXCLUDE-START
+\graphicspath{{chapters/figures/}}  % Multi-file version
+%%FLACHTEX-EXCLUDE-STOP
+%%FLACHTEX-UNCOMMENT-START
+% \graphicspath{{figures/}}  % Flattened version
+%%FLACHTEX-UNCOMMENT-STOP
+
+% Protect complex macros
+%%FLACHTEX-RAW-START
+\newcommand{\mycite}[2]{\cite{#1}\footnote{#2}}
+%%FLACHTEX-RAW-STOP
+
+% Preserve table formatting
+%%FLACHTEX-NO-FORMAT-START
+\begin{tabular}{lrr}
+Method    & Acc   & Time \\
+Baseline  & 87\%  & 10s  \\
+\end{tabular}
+%%FLACHTEX-NO-FORMAT-STOP
+
+% Combine UNCOMMENT with RAW for version-specific complex macros
+%%FLACHTEX-UNCOMMENT-START
+% %%FLACHTEX-RAW-START
+% \newcommand{\complexmacro}[2]{#1 and #2}  % Protected from preprocessing
+% %%FLACHTEX-RAW-STOP
+%%FLACHTEX-UNCOMMENT-STOP
+```
+
+**Iterative Processing:** RAW extraction and UNCOMMENT processing happen in a loop, allowing UNCOMMENT to reveal RAW blocks. This enables version swapping where alternative versions include RAW-protected complex macros.
+
+**📘 Complete tested examples:**
+- `tests/test_examples.py` - 10 real-world examples (multi-file flattening, arXiv/journal workflows)
+- `tests/test_uncomment.py` - 17 comprehensive UNCOMMENT tests (path fixing, version swapping, grammar checker support)
+- `tests/test_raw_recursive.py` - 9 iterative processing tests (UNCOMMENT revealing RAW blocks, nested processing)
+
+Run `pytest tests/test_examples.py tests/test_uncomment.py tests/test_raw_recursive.py -v` to verify all examples work.
+
 ### Flatten LaTeX-documents
 
 Currently, _flachtex_ supports file inclusions of the following form:
@@ -246,9 +304,9 @@ Currently, _flachtex_ supports file inclusions of the following form:
 
 % manual import
 %%FLACHTEX-EXPLICIT-IMPORT[path/to/file]
-%%FLACHTEX-SKIP-START
+%%FLACHTEX-EXCLUDE-START
 Complex import logic that cannot be parsed by flachtex.
-%%FLACHTEX-SKIP-STOP
+%%FLACHTEX-EXCLUDE-STOP
 ```
 
 ### Path Resolution

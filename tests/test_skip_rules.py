@@ -32,7 +32,7 @@ class TestBasicSkipRuleEdgeCases:
     """
     Test edge cases for BasicSkipRule.
 
-    The BasicSkipRule handles %%FLACHTEX-SKIP-START/STOP markers that users
+    The BasicSkipRule handles %%FLACHTEX-EXCLUDE-START/STOP markers that users
     insert to explicitly exclude content. This is the most direct control users
     have over what gets removed.
 
@@ -47,9 +47,9 @@ class TestBasicSkipRuleEdgeCases:
         rule = BasicSkipRule()
         content = (
             "Keep this\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Remove this\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Keep this too"
         )
         skips = list(rule.find_all(content))
@@ -65,13 +65,13 @@ class TestBasicSkipRuleEdgeCases:
         """
         rule = BasicSkipRule()
         content = (
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Skip 1\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Keep\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Skip 2\n"
-            "%%FLACHTEX-SKIP-STOP"
+            "%%FLACHTEX-EXCLUDE-STOP"
         )
         skips = list(rule.find_all(content))
         assert len(skips) == 2, "Multiple skip blocks must all be detected for complete content exclusion"
@@ -81,9 +81,9 @@ class TestBasicSkipRuleEdgeCases:
         rule = BasicSkipRule()
         content = (
             "Text\n"
-            "  %%FLACHTEX-SKIP-START\n"
+            "  %%FLACHTEX-EXCLUDE-START\n"
             "  Content\n"
-            "  %%FLACHTEX-SKIP-STOP\n"
+            "  %%FLACHTEX-EXCLUDE-STOP\n"
             "More text"
         )
         skips = list(rule.find_all(content))
@@ -92,14 +92,14 @@ class TestBasicSkipRuleEdgeCases:
     def test_skip_at_start_of_file(self):
         """Test skip block at the beginning of file."""
         rule = BasicSkipRule()
-        content = "%%FLACHTEX-SKIP-START\nSkip\n%%FLACHTEX-SKIP-STOP\nKeep"
+        content = "%%FLACHTEX-EXCLUDE-START\nSkip\n%%FLACHTEX-EXCLUDE-STOP\nKeep"
         skips = list(rule.find_all(content))
         assert len(skips) == 1
 
     def test_skip_at_end_of_file(self):
         """Test skip block at the end of file."""
         rule = BasicSkipRule()
-        content = "Keep\n%%FLACHTEX-SKIP-START\nSkip\n%%FLACHTEX-SKIP-STOP"
+        content = "Keep\n%%FLACHTEX-EXCLUDE-START\nSkip\n%%FLACHTEX-EXCLUDE-STOP"
         skips = list(rule.find_all(content))
         assert len(skips) == 1
 
@@ -111,7 +111,7 @@ class TestBasicSkipRuleEdgeCases:
         avoid silently removing everything after the START marker.
         """
         rule = BasicSkipRule()
-        content = "%%FLACHTEX-SKIP-START\nSome content"
+        content = "%%FLACHTEX-EXCLUDE-START\nSome content"
         skips = list(rule.find_all(content))
         # Should not match if there's no STOP
         assert len(skips) == 0, "Unclosed skip blocks must not match to prevent accidental content removal"
@@ -119,7 +119,7 @@ class TestBasicSkipRuleEdgeCases:
     def test_skip_stop_without_start(self):
         """Test that lone STOP marker doesn't match."""
         rule = BasicSkipRule()
-        content = "Some content\n%%FLACHTEX-SKIP-STOP"
+        content = "Some content\n%%FLACHTEX-EXCLUDE-STOP"
         skips = list(rule.find_all(content))
         assert len(skips) == 0, "STOP without START must be ignored to avoid unexpected behavior"
 
@@ -285,7 +285,7 @@ class TestApplySkipRules:
     def test_apply_single_rule(self):
         """Test applying a single skip rule."""
         content = TraceableString(
-            "Keep\n%%FLACHTEX-SKIP-START\nRemove\n%%FLACHTEX-SKIP-STOP\nKeep", "test.tex"
+            "Keep\n%%FLACHTEX-EXCLUDE-START\nRemove\n%%FLACHTEX-EXCLUDE-STOP\nKeep", "test.tex"
         )
         result = apply_skip_rules(content, [BasicSkipRule()])
         assert "Keep" in str(result), "Non-skipped content must be preserved"
@@ -300,7 +300,7 @@ class TestApplySkipRules:
         """
         content = TraceableString(
             "Keep\n"
-            "%%FLACHTEX-SKIP-START\nSkip1\n%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-START\nSkip1\n%%FLACHTEX-EXCLUDE-STOP\n"
             "\\begin{comment}Skip2\\end{comment}\n"
             "Keep",
             "test.tex",
@@ -320,7 +320,7 @@ class TestApplySkipRules:
         Section order matters for paper readability.
         """
         content = TraceableString(
-            "A\n%%FLACHTEX-SKIP-START\nX\n%%FLACHTEX-SKIP-STOP\nB\nC", "test.tex"
+            "A\n%%FLACHTEX-EXCLUDE-START\nX\n%%FLACHTEX-EXCLUDE-STOP\nB\nC", "test.tex"
         )
         result = apply_skip_rules(content, [BasicSkipRule()])
         result_str = str(result)
@@ -341,9 +341,9 @@ class TestApplySkipRules:
     def test_multiple_skip_blocks_removed(self):
         """Test that multiple skip blocks are all removed."""
         content = TraceableString(
-            "%%FLACHTEX-SKIP-START\nA\n%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-START\nA\n%%FLACHTEX-EXCLUDE-STOP\n"
             "Keep\n"
-            "%%FLACHTEX-SKIP-START\nB\n%%FLACHTEX-SKIP-STOP",
+            "%%FLACHTEX-EXCLUDE-START\nB\n%%FLACHTEX-EXCLUDE-STOP",
             "test.tex",
         )
         result = apply_skip_rules(content, [BasicSkipRule()])
@@ -432,7 +432,7 @@ class TestSkipRulesWithTraceableString:
         to original source files for debugging.
         """
         content = TraceableString(
-            "Keep\n%%FLACHTEX-SKIP-START\nRemove\n%%FLACHTEX-SKIP-STOP\nAlso keep",
+            "Keep\n%%FLACHTEX-EXCLUDE-START\nRemove\n%%FLACHTEX-EXCLUDE-STOP\nAlso keep",
             "test.tex",
         )
         result = apply_skip_rules(content, [BasicSkipRule()])
@@ -453,16 +453,16 @@ class TestSkipRulesWithTraceableString:
         document = {
             "main.tex": (
                 "Keep main\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip main\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\\input{section.tex}"
             ),
             "section.tex": (
                 "Keep section\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip section\n"
-                "%%FLACHTEX-SKIP-STOP"
+                "%%FLACHTEX-EXCLUDE-STOP"
             ),
         }
 
@@ -501,7 +501,7 @@ class TestSkipRulesCombinedWithOtherFeatures:
         from flachtex import remove_comments
 
         content = TraceableString(
-            "Keep % comment\n%%FLACHTEX-SKIP-START\nRemove\n%%FLACHTEX-SKIP-STOP", "test.tex"
+            "Keep % comment\n%%FLACHTEX-EXCLUDE-START\nRemove\n%%FLACHTEX-EXCLUDE-STOP", "test.tex"
         )
         # First apply skip rules
         content = apply_skip_rules(content, [BasicSkipRule()])
@@ -530,9 +530,9 @@ class TestSkipRulesCombinedWithOtherFeatures:
             "main.tex": (
                 "\\newcommand{\\foo}{BAR}\n"
                 "\\foo\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "\\foo should be skipped\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\\foo again"
             )
         }

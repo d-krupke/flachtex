@@ -80,13 +80,13 @@ class TestRawMarkers:
         document = {
             "main.tex": (
                 "Normal content.\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "This will be skipped.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "%%FLACHTEX-RAW-START\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "This should NOT be skipped (inside RAW).\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "%%FLACHTEX-RAW-STOP\n"
                 "End content."
             )
@@ -100,7 +100,7 @@ class TestRawMarkers:
         assert "Normal content." in result_str, "Normal content must be processed"
         assert "This will be skipped." not in result_str, "Skip blocks outside RAW must be removed"
         assert "This should NOT be skipped (inside RAW)." in result_str, "Skip markers inside RAW must be ignored"
-        assert "%%FLACHTEX-SKIP-START" in result_str, "Skip markers inside RAW must appear in output"
+        assert "%%FLACHTEX-EXCLUDE-START" in result_str, "Skip markers inside RAW must appear in output"
         assert "End content." in result_str, "Content after RAW must be processed"
 
     def test_raw_blocks_skip_substitution(self):
@@ -444,9 +444,9 @@ class TestNoFormatMarkers:
         content = TraceableString(
             "%%FLACHTEX-NO-FORMAT-START\n"
             "Keep this.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Remove this.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Keep this too.\n"
             "%%FLACHTEX-NO-FORMAT-STOP",
             "test.tex"
@@ -534,9 +534,9 @@ class TestMarkersInteraction:
         """
         document = {
             "main.tex": (
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip this.\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "Keep this.\n"
                 "%%FLACHTEX-RAW-START\n"
                 "Raw content.\n"
@@ -562,9 +562,9 @@ class TestMarkersInteraction:
         content = TraceableString(
             "%%FLACHTEX-NO-FORMAT-START\n"
             "Pre-formatted.\n"
-            "%%FLACHTEX-SKIP-START\n"
+            "%%FLACHTEX-EXCLUDE-START\n"
             "Remove this.\n"
-            "%%FLACHTEX-SKIP-STOP\n"
+            "%%FLACHTEX-EXCLUDE-STOP\n"
             "Still pre-formatted.\n"
             "%%FLACHTEX-NO-FORMAT-STOP",
             "test.tex"
@@ -587,7 +587,7 @@ class TestMarkersInteraction:
         """
         document = {
             "main.tex": (
-                "%%FLACHTEX-SKIP-START\nSkip\n%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-START\nSkip\n%%FLACHTEX-EXCLUDE-STOP\n"
                 "Normal: Format this.\n"
                 "%%FLACHTEX-RAW-START\nRaw: Don't process.\n%%FLACHTEX-RAW-STOP\n"
                 "%%FLACHTEX-NO-FORMAT-START\nNo-format: Process but don't format.\n%%FLACHTEX-NO-FORMAT-STOP"

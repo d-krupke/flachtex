@@ -50,16 +50,24 @@ class TodonotesRule(SkipRule):
 
 class BasicSkipRule(RegexSkipRule):
     """
-        Skips parts of the form
-        ```
-    %%FLACHTEX-SKIP-START
-    ...
-    %%FLACHTEX-SKIP-STOP
+    Excludes parts marked for exclusion from the output.
+
+    Marker format:
+    ```
+    %%FLACHTEX-EXCLUDE-START
+    ...content to exclude...
+    %%FLACHTEX-EXCLUDE-STOP
+    ```
+
+    This removes the marked content from the flattened output, useful for:
+    - Draft notes and internal comments
+    - Content that should not appear in submissions
+    - Temporary or work-in-progress sections
     """
 
     def __init__(self):
         super().__init__(
-            r"(?P<skipped_part>(^\s*%%FLACHTEX-SKIP-START).*?(^\s*%%FLACHTEX-SKIP-STOP))"
+            r"(?P<skipped_part>(^\s*%%FLACHTEX-EXCLUDE-START).*?(^\s*%%FLACHTEX-EXCLUDE-STOP))"
         )
 
     def determine_skip(self, match: re.Match):

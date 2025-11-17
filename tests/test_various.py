@@ -99,14 +99,14 @@ def test_multiple_subimports_with_star():
 
 def test_skip_functionality():
     document = {
-        "main.tex": "line 0\n%%FLACHTEX-SKIP-START\nline 3\n%%FLACHTEX-SKIP-STOP\nline 5\n"
+        "main.tex": "line 0\n%%FLACHTEX-EXCLUDE-START\nline 3\n%%FLACHTEX-EXCLUDE-STOP\nline 5\n"
     }
     assert flatten(document) == "line 0\n\nline 5\n"
 
 
 def test_multiple_skip_blocks():
     document = {
-        "main.tex": "line 0\n%%FLACHTEX-SKIP-START\nline 3\n%%FLACHTEX-SKIP-STOP\n%%FLACHTEX-SKIP-START\nbla\n%%FLACHTEX-SKIP-STOP\nline 5\n"
+        "main.tex": "line 0\n%%FLACHTEX-EXCLUDE-START\nline 3\n%%FLACHTEX-EXCLUDE-STOP\n%%FLACHTEX-EXCLUDE-START\nbla\n%%FLACHTEX-EXCLUDE-STOP\nline 5\n"
     }
     assert flatten(document) == "line 0\n\n\nline 5\n"
 

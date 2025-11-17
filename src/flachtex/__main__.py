@@ -102,13 +102,17 @@ def main() -> None:
         # Normal flattening/expansion
         doc = preprocessor.expand_file(str(file_path))
 
-    if args.comments:
-        doc = remove_comments(doc)
+    # Apply formatting BEFORE comment removal
+    # Formatter needs comment markers like %%FLACHTEX-NO-FORMAT-START/STOP
     if args.format:
         doc = format_latex(doc, indent=args.indent, sentence_per_line=True)
     elif args.indent > 0:
         # If indent is specified without --format, apply indentation only (no sentence splitting)
         doc = format_latex(doc, indent=args.indent, sentence_per_line=False)
+
+    # Remove comments at the END, as they may contain directives for flachtex
+    if args.comments:
+        doc = remove_comments(doc)
     if args.to_json:
         data = doc.to_json()
         data["sources"] = preprocessor.structure

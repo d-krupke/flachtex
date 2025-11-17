@@ -85,22 +85,26 @@ def find_sentence_boundaries(content: str, protected_ranges: list[Range]) -> lis
         if _is_in_range(end_pos, protected_ranges):
             continue
 
-        # Skip if there's a comment on the same line after this boundary
-        # (we want to keep the comment with the sentence)
-        has_comment_on_line = False
-        line_end = content.find("\n", space_start)
-        if line_end != -1:
-            # Look for any comment in protected_ranges that starts in this range
-            for prange in protected_ranges:
-                if space_end <= prange.start < line_end:
-                    # There's a protected range on this line
-                    # Check if it's actually a comment by looking for %
-                    if prange.start < len(content) and content[prange.start] == "%":
-                        # It's a comment, don't split here
-                        has_comment_on_line = True
-                        break
+        # Skip if the space after the boundary is in a protected range
+        # This prevents splitting whitespace that's part of a comment or other protected content
+        if _is_in_range(space_start, protected_ranges):
+            continue
 
-        if has_comment_on_line:
+        # Skip if there's a comment immediately after this boundary (on the same line)
+        # We want to keep the comment attached to its sentence
+        # But still allow splitting earlier sentences on the same line
+        line_end = content.find("\n", space_start)
+        if line_end == -1:
+            line_end = len(content)
+
+        # Check if there's a comment starting right after the spaces at this boundary
+        next_nonspace = space_end
+        while next_nonspace < line_end and content[next_nonspace] in " \t":
+            next_nonspace += 1
+
+        if next_nonspace < line_end and content[next_nonspace] == "%":
+            # Comment immediately follows this sentence boundary
+            # Keep the comment with this sentence
             continue
 
         # Skip if it's already at end of line (followed only by newline)
