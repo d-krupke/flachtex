@@ -39,17 +39,20 @@ def remove_comments(content: TraceableString) -> TraceableString:
         'text more text'
     """
     # Find all line comments (% to end of line, not preceded by backslash)
-    regex = re.compile(r"^.*?(?<!\\)(?P<comment>%.*\n)", re.MULTILINE)
-    comments: list[tuple[int, int]] = []
+    # Capture trailing whitespace before the comment, but keep the newline
+    regex = re.compile(r"^.*?(?<!\\)(?P<ws>[ \t]*)(?P<comment>%.*?)(?P<nl>\n)", re.MULTILINE)
+    replacements: list[tuple[int, int, str]] = []  # (start, end, replacement)
     for match in regex.finditer(str(content)):
-        comments.append((match.start("comment"), match.end("comment")))
-    comments.sort()
+        # Remove the whitespace and comment, but keep the newline
+        ws_start = match.start("ws")
+        nl_start = match.start("nl")
+        nl_end = match.end("nl")
+        # Replace "  % comment\n" with just "\n"
+        replacements.append((ws_start, nl_start, ""))
 
-    # Remove comments by slicing, tracking offset as content shrinks
-    offset = 0
-    for start, end in comments:
-        content = content[: start + offset] + content[end + offset :]
-        offset -= end - start
+    # Apply replacements in reverse order to maintain positions
+    for start, end, replacement in reversed(replacements):
+        content = content[:start] + TraceableString(replacement, origin="comment_removal") + content[end:]
 
     # Remove block comments from the comments package
     content = apply_skip_rules(content, [CommentsPackageSkipRule()])

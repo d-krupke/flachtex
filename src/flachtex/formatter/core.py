@@ -12,6 +12,8 @@ from ..utils import Range
 from .detectors import (
     CommentDetector,
     MathEnvironmentDetector,
+    NoFormatDetector,
+    RawDetector,
     VerbatimEnvironmentDetector,
 )
 from .indentation import apply_indentation
@@ -61,7 +63,7 @@ def format_latex(
 
     # Apply sentence splitting if requested
     if sentence_per_line:
-        # Find protected ranges (verbatim, math, comments, etc.)
+        # Find protected ranges (verbatim, math, comments, RAW markers, no-format markers, etc.)
         protected_ranges: list[Range] = []
 
         verbatim_detector = VerbatimEnvironmentDetector()
@@ -72,6 +74,13 @@ def format_latex(
 
         comment_detector = CommentDetector()
         protected_ranges.extend(comment_detector.find_all(content_str))
+
+        # RAW markers take priority - they protect from everything
+        raw_detector = RawDetector()
+        protected_ranges.extend(raw_detector.find_all(content_str))
+
+        no_format_detector = NoFormatDetector()
+        protected_ranges.extend(no_format_detector.find_all(content_str))
 
         # Sort ranges
         protected_ranges.sort()

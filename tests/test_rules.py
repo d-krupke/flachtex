@@ -39,12 +39,12 @@ def flatten(document, root="main.tex", rules_config=None):
 
 
 class TestBasicSkipRule:
-    """Tests for the basic FLACHTEX-SKIP rule."""
+    """Tests for the basic FLACHTEX-EXCLUDE rule."""
 
     def test_simple_skip(self):
         """Test basic skip functionality."""
         document = {
-            "main.tex": "line 0\n%%FLACHTEX-SKIP-START\nline 1\n%%FLACHTEX-SKIP-STOP\nline 2\n"
+            "main.tex": "line 0\n%%FLACHTEX-EXCLUDE-START\nline 1\n%%FLACHTEX-EXCLUDE-STOP\nline 2\n"
         }
         result = flatten(document)
         assert "line 0" in result
@@ -56,13 +56,13 @@ class TestBasicSkipRule:
         document = {
             "main.tex": (
                 "a\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "b\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "c\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "d\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "e\n"
             )
         }
@@ -78,9 +78,9 @@ class TestBasicSkipRule:
         document = {
             "main.tex": (
                 "start\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "\\input{skipped.tex}\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "end\n"
             ),
             "skipped.tex": "This should not appear\n",
@@ -96,9 +96,9 @@ class TestBasicSkipRule:
             "main.tex": "main\n\\input{sub.tex}\nafter\n",
             "sub.tex": (
                 "before skip\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "skipped\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "after skip\n"
             ),
         }
@@ -306,9 +306,9 @@ class TestRuleCombinations:
         document = {
             "main.tex": (
                 "visible\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "skipped\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\\begin{comment}\n"
                 "comment\n"
                 "\\end{comment}\n"
@@ -331,9 +331,9 @@ class TestRuleCombinations:
         document = {
             "main.tex": (
                 "text\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "skip1\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "\\todo{todo note}\n"
                 "\\begin{comment}\n"
                 "comment block\n"
@@ -360,9 +360,9 @@ class TestRuleCombinations:
             "main.tex": ("start\n\\subimport{sub/}{content}\nend\n"),
             "sub/content.tex": (
                 "visible\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "skipped\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "visible2\n"
                 "\\includegraphics{img.pdf}\n"
             ),
@@ -411,9 +411,9 @@ class TestRuleOrdering:
         document = {
             "main.tex": (
                 "\\added{visible}\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "\\added{skipped}\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
             )
         }
         result = flatten(
@@ -429,9 +429,9 @@ class TestRuleOrdering:
         document = {
             "main.tex": (
                 "start\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "\\input{missing.tex}\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "end\n"
             ),
         }
@@ -456,9 +456,9 @@ class TestCustomRuleInteractions:
             "content.tex": (
                 "\\section{Section}\n"
                 "Text\n"
-                "%%FLACHTEX-SKIP-START\n"
+                "%%FLACHTEX-EXCLUDE-START\n"
                 "Skip\n"
-                "%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-STOP\n"
                 "More text\n"
             ),
         }
@@ -476,7 +476,7 @@ class TestCustomRuleInteractions:
         document = {
             "main.tex": ("start\n\\input{all_skipped.tex}\nend\n"),
             "all_skipped.tex": (
-                "%%FLACHTEX-SKIP-START\neverything is skipped\n%%FLACHTEX-SKIP-STOP\n"
+                "%%FLACHTEX-EXCLUDE-START\neverything is skipped\n%%FLACHTEX-EXCLUDE-STOP\n"
             ),
         }
         result = flatten(document)

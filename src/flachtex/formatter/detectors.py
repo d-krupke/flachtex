@@ -120,3 +120,65 @@ class CommentDetector:
             ranges.append(Range(match.start(), match.end()))
 
         return ranges
+
+
+class NoFormatDetector:
+    """Detects %%FLACHTEX-NO-FORMAT regions that should not be reformatted."""
+
+    def find_all(self, content: str) -> list[Range]:
+        """
+        Find all NO-FORMAT marker ranges in the content.
+
+        NO-FORMAT blocks are marked with:
+        %%FLACHTEX-NO-FORMAT-START
+        ...content...
+        %%FLACHTEX-NO-FORMAT-STOP
+
+        These blocks should be included in output but not reformatted.
+        Preprocessing (skip rules, substitution) still applies.
+
+        Args:
+            content: The LaTeX content to search
+
+        Returns:
+            List of ranges that should be protected from formatting
+        """
+        ranges: list[Range] = []
+
+        # Match %%FLACHTEX-NO-FORMAT-START...%%FLACHTEX-NO-FORMAT-STOP
+        pattern = r"%%FLACHTEX-NO-FORMAT-START.*?%%FLACHTEX-NO-FORMAT-STOP"
+        for match in re.finditer(pattern, content, re.DOTALL):
+            ranges.append(Range(match.start(), match.end()))
+
+        return ranges
+
+
+class RawDetector:
+    """Detects %%FLACHTEX-RAW regions that should not be reformatted."""
+
+    def find_all(self, content: str) -> list[Range]:
+        """
+        Find all RAW marker ranges in the content.
+
+        RAW blocks are marked with:
+        %%FLACHTEX-RAW-START
+        ...content...
+        %%FLACHTEX-RAW-STOP
+
+        These blocks should be completely excluded from all processing,
+        including formatting. They are the ultimate escape hatch.
+
+        Args:
+            content: The LaTeX content to search
+
+        Returns:
+            List of ranges that should be protected from formatting
+        """
+        ranges: list[Range] = []
+
+        # Match %%FLACHTEX-RAW-START...%%FLACHTEX-RAW-STOP
+        pattern = r"%%FLACHTEX-RAW-START.*?%%FLACHTEX-RAW-STOP"
+        for match in re.finditer(pattern, content, re.DOTALL):
+            ranges.append(Range(match.start(), match.end()))
+
+        return ranges

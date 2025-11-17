@@ -6,6 +6,8 @@ from .command_finder import CommandFinder
 from .formatter import format_latex
 from .preprocessor import Preprocessor
 
+__version__ = "1.0.0"
+
 __all__ = [
     "FileFinder",
     "TraceableString",
