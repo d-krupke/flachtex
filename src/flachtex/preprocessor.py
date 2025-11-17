@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -51,19 +53,148 @@ class Preprocessor:
         self.file_finder = FileFinder(project_root)
         self.structure: dict[str, dict[str, Any]] = {}
 
+    def _extract_raw_blocks(
+        self, content: TraceableString
+    ) -> tuple[TraceableString, dict[str, TraceableString]]:
+        """
+        Extract RAW blocks and replace with placeholders.
+
+        RAW blocks are marked with:
+        %%FLACHTEX-RAW-START
+        ...content...
+        %%FLACHTEX-RAW-STOP
+
+        These blocks should be completely excluded from preprocessing.
+
+        Args:
+            content: The content to extract RAW blocks from
+
+        Returns:
+            Tuple of (content with placeholders, mapping of placeholder to raw content)
+
+        Raises:
+            ValueError: If RAW blocks are unclosed, nested, or contain imports
+        """
+        raw_blocks: dict[str, TraceableString] = {}
+        content_str = str(content)
+
+        # Check for unclosed RAW blocks
+        start_count = content_str.count("%%FLACHTEX-RAW-START")
+        stop_count = content_str.count("%%FLACHTEX-RAW-STOP")
+        if start_count != stop_count:
+            if start_count > stop_count:
+                msg = f"Unclosed RAW block: {start_count} START markers but only {stop_count} STOP markers"
+            else:
+                msg = f"RAW-STOP without RAW-START: {stop_count} STOP markers but only {start_count} START markers"
+            raise ValueError(msg)
+
+        # Pattern to match RAW blocks (non-greedy to avoid matching across multiple blocks)
+        pattern = r"%%FLACHTEX-RAW-START\n(.*?)%%FLACHTEX-RAW-STOP"
+        matches = list(re.finditer(pattern, content_str, re.DOTALL))
+
+        # Check for nested RAW blocks
+        for i, match in enumerate(matches):
+            block_content = match.group(1)
+            if "%%FLACHTEX-RAW-START" in block_content:
+                msg = "Nested RAW blocks are not allowed"
+                raise ValueError(msg)
+
+            # Check for imports inside RAW blocks
+            import_patterns = [
+                r"\\input\{",
+                r"\\include\{",
+                r"\\subimport\{",
+                r"\\subfile\{",
+            ]
+            for import_pattern in import_patterns:
+                if re.search(import_pattern, block_content):
+                    msg = f"Import commands not allowed in RAW blocks: found {import_pattern}"
+                    raise ValueError(msg)
+
+        # Extract RAW blocks and replace with placeholders
+        # Work backwards to maintain correct positions
+        result = content
+        for match in reversed(matches):
+            # Extract the content inside RAW markers (group 1)
+            raw_content = content[match.start(1) : match.end(1)]
+
+            # Generate a unique placeholder
+            placeholder = f"%%FLACHTEX-RAW-PLACEHOLDER-{uuid.uuid4()}%%"
+            raw_blocks[placeholder] = raw_content
+
+            # Replace the entire RAW block (including markers) with the placeholder
+            result = (
+                result[: match.start()]
+                + TraceableString(placeholder, origin="preprocessor")
+                + result[match.end() :]
+            )
+
+        return result, raw_blocks
+
+    def _restore_raw_blocks(
+        self, content: TraceableString, raw_blocks: dict[str, TraceableString]
+    ) -> TraceableString:
+        """
+        Restore RAW blocks from placeholders.
+
+        Args:
+            content: The content with placeholders
+            raw_blocks: Mapping of placeholder to raw content
+
+        Returns:
+            Content with RAW blocks restored (including markers)
+        """
+        result = content
+        for placeholder, raw_content in raw_blocks.items():
+            # Replace placeholder with original content (with markers)
+            original_block = (
+                TraceableString("%%FLACHTEX-RAW-START\n", origin="preprocessor")
+                + raw_content
+                + TraceableString("%%FLACHTEX-RAW-STOP", origin="preprocessor")
+            )
+
+            # Find the placeholder position
+            content_str = str(result)
+            placeholder_pos = content_str.find(placeholder)
+            if placeholder_pos != -1:
+                # Replace using slicing
+                result = (
+                    result[:placeholder_pos]
+                    + original_block
+                    + result[placeholder_pos + len(placeholder) :]
+                )
+
+        return result
+
     def read_file(self, file_path: Path | str) -> TraceableString:
         """
         Read a file and apply skip and substitution rules.
+
+        RAW blocks (%%FLACHTEX-RAW-START/STOP) are extracted before processing
+        and restored after, so they are completely excluded from preprocessing.
 
         Args:
             file_path: Path to the file to read
 
         Returns:
             The file content after applying preprocessing rules
+
+        Raises:
+            ValueError: If RAW blocks are malformed or contain imports
         """
         content = TraceableString(self.file_finder.read(file_path), origin=file_path)
+
+        # Extract RAW blocks before preprocessing
+        content, raw_blocks = self._extract_raw_blocks(content)
+
+        # Apply normal preprocessing (skip rules, substitution)
         content = apply_skip_rules(content, self.skip_rules)
-        return apply_substitution_rules(content, self.substitution_rules)
+        content = apply_substitution_rules(content, self.substitution_rules)
+
+        # Restore RAW blocks after preprocessing
+        content = self._restore_raw_blocks(content, raw_blocks)
+
+        return content
 
     def include_path(
         self, content: TraceableString, subimport_path: str | None

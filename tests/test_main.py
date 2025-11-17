@@ -136,6 +136,48 @@ class TestParseArguments:
             assert args.newcommand, "Newcommand flag must be recognized for command substitution"
             assert args.path == ["main.tex"]
 
+    def test_format_flag(self):
+        """
+        Test --format flag for diff-friendly output.
+
+        Users need CLI access to formatter for version control workflows.
+        Currently no way to format from CLI without Python code.
+        """
+        with patch("sys.argv", ["flachtex", "--format", "test.tex"]):
+            args = parse_arguments()
+            assert args.format, "--format flag must be recognized to enable diff-friendly formatting"
+            assert args.path == ["test.tex"]
+
+    def test_format_with_indent(self):
+        """
+        Test --format with --indent for environment indentation.
+
+        Users want control over indentation level for readability preferences.
+        """
+        with patch("sys.argv", ["flachtex", "--format", "--indent", "4", "test.tex"]):
+            args = parse_arguments()
+            assert args.format, "--format flag must be parsed"
+            assert args.indent == 4, "--indent value must be parsed as integer"
+            assert args.path == ["test.tex"]
+
+    def test_indent_without_format(self):
+        """
+        Test that --indent can be used without --format.
+
+        Some users may want indentation without sentence splitting.
+        """
+        with patch("sys.argv", ["flachtex", "--indent", "2", "test.tex"]):
+            args = parse_arguments()
+            assert args.indent == 2, "--indent must work without --format"
+            assert args.path == ["test.tex"]
+
+    def test_format_defaults(self):
+        """Test that format and indent have correct defaults."""
+        with patch("sys.argv", ["flachtex", "test.tex"]):
+            args = parse_arguments()
+            assert not hasattr(args, 'format') or not args.format, "Formatting must be opt-in by default"
+            assert not hasattr(args, 'indent') or args.indent == 0, "Indentation must default to 0 (disabled)"
+
 
 class TestFindCommandDefinitions:
     """
@@ -472,3 +514,110 @@ class TestMainIntegration:
             assert "Intro text" in output, "First section content must be included"
             assert "Methods" in output, "Second section must appear in output"
             assert "Methods text" in output, "Second section content must be included"
+
+    def test_format_from_cli(self, tmp_path):
+        """
+        Test --format flag applies diff-friendly formatting from CLI.
+
+        Users need CLI access to formatter for version control workflows without
+        writing Python code.
+        """
+        main_file = tmp_path / "main.tex"
+        main_file.write_text(
+            "\\documentclass{article}\n"
+            "\\begin{document}\n"
+            "This is sentence one. This is sentence two. This is sentence three.\n"
+            "\\end{document}"
+        )
+
+        with patch("sys.argv", ["flachtex", "--format", str(main_file)]):
+            captured_output = StringIO()
+            with patch("sys.stdout", captured_output):
+                main()
+
+            output = captured_output.getvalue()
+            # Sentences should be split onto separate lines
+            assert "This is sentence one.\n" in output, "Sentences must be split with --format flag"
+            assert "This is sentence two.\n" in output, "Each sentence must be on its own line"
+            assert "This is sentence three.\n" in output, "All sentences must be formatted"
+
+    def test_format_with_indent_from_cli(self, tmp_path):
+        """
+        Test --format with --indent applies environment indentation.
+
+        Users want control over indentation level for diff-friendly output that's
+        also readable.
+        """
+        main_file = tmp_path / "main.tex"
+        main_file.write_text(
+            "\\begin{itemize}\n"
+            "\\item First item.\n"
+            "\\item Second item.\n"
+            "\\end{itemize}"
+        )
+
+        with patch("sys.argv", ["flachtex", "--format", "--indent", "2", str(main_file)]):
+            captured_output = StringIO()
+            with patch("sys.stdout", captured_output):
+                main()
+
+            output = captured_output.getvalue()
+            # Items should be indented
+            assert "  \\item First item." in output, "Items must be indented with --indent flag"
+            assert "  \\item Second item." in output, "All items must have consistent indentation"
+
+    def test_format_without_flag_no_formatting(self, tmp_path):
+        """
+        Test that formatting is opt-in (not applied by default).
+
+        Backward compatibility: existing user workflows must not change.
+        Formatting only happens with explicit --format flag.
+        """
+        main_file = tmp_path / "main.tex"
+        main_file.write_text(
+            "\\documentclass{article}\n"
+            "\\begin{document}\n"
+            "This is sentence one. This is sentence two.\n"
+            "\\end{document}"
+        )
+
+        with patch("sys.argv", ["flachtex", str(main_file)]):
+            captured_output = StringIO()
+            with patch("sys.stdout", captured_output):
+                main()
+
+            output = captured_output.getvalue()
+            # Without --format, sentences should stay on one line
+            assert "This is sentence one. This is sentence two." in output, "Content must not be formatted without --format flag"
+            # Should NOT have sentence splitting
+            assert "This is sentence one.\nThis is sentence two." not in output, "Formatting must be opt-in"
+
+    def test_format_with_comments_and_todos(self, tmp_path):
+        """
+        Test --format works with --comments and --todos for complete workflow.
+
+        Journal submission workflow: flatten, remove comments/todos, AND format
+        for version control in one command.
+        """
+        main_file = tmp_path / "main.tex"
+        main_file.write_text(
+            "\\documentclass{article}\n"
+            "\\begin{document}\n"
+            "Normal text. More text. % draft comment\n"
+            "\\todo{Fix this}\n"
+            "Final text.\n"
+            "\\end{document}"
+        )
+
+        with patch("sys.argv", ["flachtex", "--format", "--todos", "--comments", str(main_file)]):
+            captured_output = StringIO()
+            with patch("sys.stdout", captured_output):
+                main()
+
+            output = captured_output.getvalue()
+            # Sentences should be formatted
+            assert "Normal text.\n" in output, "Sentences must be split with --format"
+            assert "More text.\n" in output
+            # Comments and todos should be removed
+            assert "draft comment" not in output, "Comments must be removed"
+            assert "Fix this" not in output or "\\todo" not in output, "Todos must be removed"

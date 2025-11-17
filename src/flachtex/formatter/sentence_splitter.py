@@ -137,7 +137,8 @@ def find_sentence_boundaries(content: str, protected_ranges: list[Range]) -> lis
                 if word in abbreviations:
                     continue
                 # Also skip single letter followed by period (A. B. C.)
-                if len(word) == 1:
+                # But not digits (Text 2. should be split)
+                if len(word) == 1 and word.isalpha():
                     continue
 
         # This is a valid sentence boundary
