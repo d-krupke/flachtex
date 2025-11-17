@@ -22,7 +22,7 @@ from unittest.mock import patch
 
 import pytest
 
-from flachtex.main import find_command_definitions, main, parse_arguments
+from flachtex.__main__ import find_command_definitions, main, parse_arguments
 
 
 class TestParseArguments:
